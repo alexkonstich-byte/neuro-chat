@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx vite *)",
+      "Bash(node --experimental-sqlite --check src/index.js)",
+      "Bash(bash -n \"C:/Users/legal/Desktop/neuro/deploy/bootstrap.sh\")",
+      "Bash(bash -n \"C:/Users/legal/Desktop/neuro/deploy/update.sh\")"
+    ]
+  }
+}

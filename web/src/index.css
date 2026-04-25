@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #08090F;
+    --bg-elev: #0E1018;
+    --bg-elev-2: #13151F;
+    --bg-elev-3: #1B1E2B;
+    --line: rgba(255,255,255,0.06);
+    --line-strong: rgba(255,255,255,0.12);
+
+    --text: rgba(255,255,255,0.96);
+    --text-2: rgba(255,255,255,0.72);
+    --text-3: rgba(255,255,255,0.46);
+    --text-4: rgba(255,255,255,0.32);
+
+    --brand-1: #5B72FF;
+    --brand-2: #C56BFF;
+    --brand-3: #65DEFF;
+
+    /* Composer height for safe-area-aware page padding */
+    --composer-h: 64px;
+  }
+
+  html, body, #root { height: 100%; }
+  html { color-scheme: dark; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior-y: none;
+  }
+
+  /* Type rhythm */
+  h1,h2,h3,.font-display { font-family: 'Bricolage Grotesque', system-ui, sans-serif; letter-spacing: -0.02em; }
+
+  /* Scrollbars */
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 6px; }
+  *::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+
+  /* Selection */
+  ::selection { background: rgba(91,114,255,0.45); color: white; }
+
+  /* iOS input zoom kill */
+  input, textarea, select { font-size: 16px; }
+
+  button { -webkit-user-select: none; user-select: none; }
+}
+
+@layer components {
+  /* Safe-area helpers */
+  .safe-top    { padding-top: max(env(safe-area-inset-top), 0.5rem); }
+  .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0.5rem); }
+
+  /* Glass surface used for cards, sheets, headers */
+  .surface {
+    background: rgba(20,22,32,0.72);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid var(--line);
+  }
+  .surface-strong {
+    background: rgba(14,16,24,0.86);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid var(--line-strong);
+  }
+
+  /* Hero gradient text */
+  .text-hero {
+    background: linear-gradient(135deg,#fff 0%, #b9c2ff 35%, #f3a4ff 65%, #a3eaff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .text-brand {
+    background-image: linear-gradient(135deg,#5B72FF, #C56BFF, #65DEFF);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  /* Aurora / mesh halo */
+  .halo {
+    position: absolute; inset: -10%;
+    background:
+      radial-gradient(40% 30% at 12% 18%, rgba(91,114,255,0.35), transparent 60%),
+      radial-gradient(40% 30% at 88% 78%, rgba(197,107,255,0.30), transparent 60%),
+      radial-gradient(40% 30% at 80% 12%, rgba(101,222,255,0.25), transparent 60%);
+    filter: blur(40px) saturate(140%);
+    pointer-events: none;
+    animation: meshDrift 22s ease-in-out infinite;
+  }
+
+  /* Animated gradient backgrounds for profile cards */
+  .gradient-bg {
+    background-size: 280% 280%;
+    animation: gradientX 16s ease-in-out infinite;
+  }
+
+  /* Rainbow conic ring for avatar borders */
+  .ring-rainbow {
+    background: conic-gradient(from 0deg, #ff5b6c, #ffaa3a, #fff36b, #5ce28a, #5cc8ff, #b388ff, #ff5b6c);
+    animation: spinSlow 6s linear infinite;
+  }
+  @keyframes spinSlow { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+  /* Shimmer for skeletons / pending */
+  .shimmer {
+    background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.10) 37%, rgba(255,255,255,0.04) 63%);
+    background-size: 400% 100%;
+    animation: shimmer 2.4s linear infinite;
+  }
+
+  /* Press / spring feedback for buttons */
+  .press {
+    transition: transform 120ms cubic-bezier(.2,.9,.3,1.4), opacity 160ms ease, box-shadow 160ms ease;
+  }
+  .press:active { transform: scale(0.97); }
+
+  /* Bubble entrance */
+  .bubble-in { animation: slideUp 220ms cubic-bezier(.2,.9,.3,1); }
+
+  /* Subtle sheen on premium surfaces */
+  .premium-sheen {
+    background:
+      linear-gradient(135deg, rgba(255,177,59,0.18) 0%, rgba(255,91,163,0.18) 100%),
+      rgba(20,22,32,0.6);
+    border: 1px solid rgba(255,177,59,0.25);
+  }
+
+  /* Top scroll mask so content fades under sticky header */
+  .scroll-mask-top {
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 16px);
+            mask-image: linear-gradient(to bottom, transparent, #000 16px);
+  }
+}
+
+@layer utilities {
+  .grid-stack > * { grid-area: 1 / 1; }
+  .text-balance { text-wrap: balance; }
+  .text-pretty  { text-wrap: pretty; }
+
+  /* Hide scrollbars but keep scroll */
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+}
