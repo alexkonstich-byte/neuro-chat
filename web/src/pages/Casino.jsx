@@ -32,6 +32,7 @@ export default function Casino() {
         setReels(r.reels);
         setLast(r);
         setSpinning(false);
+        if (r.jackpot) burstConfetti();
         const fresh = await api.me();
         setUser(fresh.user);
       }, 1100);
@@ -159,6 +160,24 @@ export default function Casino() {
 }
 
 function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function burstConfetti() {
+  const colors = ['#5B72FF','#C56BFF','#65DEFF','#FFB13B','#FF5BA3','#34D399'];
+  const root = document.createElement('div');
+  root.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden';
+  document.body.appendChild(root);
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = Math.random() * 100 + '%';
+    el.style.background = colors[i % colors.length];
+    el.style.setProperty('--cx', (Math.random() * 200 - 100) + 'px');
+    el.style.setProperty('--cr', (Math.random() * 720 - 360) + 'deg');
+    el.style.animationDelay = (Math.random() * 200) + 'ms';
+    root.appendChild(el);
+  }
+  setTimeout(() => root.remove(), 2400);
+}
 function translate(err) {
   return ({
     not_enough_xp: 'Недостаточно XP',

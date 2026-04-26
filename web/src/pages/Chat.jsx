@@ -100,31 +100,60 @@ export default function Chat() {
     }
   };
 
-  const recordVoice = async (videoCircle = false) => {
-    if (voice?.recording) { voice.stop(); return; }
+  // Push-to-hold recording. Returns a promise that resolves when recording stops.
+  const startHoldRecord = async (videoCircle = false) => {
+    // Don't double-start
+    if (voice?.recording) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true, video: videoCircle ? { facingMode: 'user', width: 320, height: 320 } : false,
+        audio: true, video: videoCircle ? { facingMode: 'user', width: 480, height: 480 } : false,
       });
       const mr = new MediaRecorder(stream);
       const chunks = [];
-      mr.ondataavailable = (ev) => chunks.push(ev.data);
+      let cancelled = false;
+      const startedAt = Date.now();
+
+      mr.ondataavailable = (ev) => { if (ev.data.size > 0) chunks.push(ev.data); };
       mr.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunks, { type: mr.mimeType });
-        const file = new File([blob], `voice_${Date.now()}.webm`, { type: blob.type });
-        const r = await api.uploadFile(file, videoCircle ? 'video_note' : 'voice');
-        setPendingFiles([{ ...r, name: file.name, size: file.size }]);
-        setVoice({ blobReady: true, kind: videoCircle ? 'video_note' : 'voice' });
+        if (cancelled) { setVoice(null); return; }
+        const ms = Date.now() - startedAt;
+        if (ms < 350) { setVoice(null); flashToast('Слишком коротко — удерживай кнопку', 'bad'); return; }
+
+        const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
+        const ext  = videoCircle ? 'webm' : 'webm';
+        const file = new File([blob], `${videoCircle ? 'circle' : 'voice'}_${Date.now()}.${ext}`, { type: blob.type });
+        const kind = videoCircle ? 'video_note' : 'voice';
+        const r = await api.uploadFile(file, kind);
+
+        // Auto-send right after upload — the bubble appears as if released = sent.
+        getSocket().emit('message:send', {
+          chatId, text: '', replyTo: replyTo?.id || null, kind, attachmentIds: [r.id],
+          mediaMeta: { duration: ms },
+        }, (ack) => {
+          if (ack?.error) flashToast('Ошибка: ' + ack.error, 'bad');
+        });
+        setReplyTo(null);
+        setVoice(null);
       };
+
       mr.start();
       setVoice({
-        recording: true, mediaRecorder: mr, kind: videoCircle ? 'video_note' : 'voice',
-        stop: () => mr.stop(),
+        recording: true,
+        kind: videoCircle ? 'video_note' : 'voice',
+        startedAt,
+        stop:   () => { try { mr.stop(); } catch {} },
+        cancel: () => { cancelled = true; try { mr.stop(); } catch {} },
       });
     } catch (e) {
       flashToast('Нет доступа к микрофону/камере', 'bad');
     }
+  };
+
+  const stopHoldRecord = (cancel = false) => {
+    if (!voice?.recording) return;
+    if (cancel) voice.cancel?.();
+    else voice.stop?.();
   };
 
   const reactTo = (msgId, emoji) => {
@@ -281,7 +310,7 @@ export default function Chat() {
       </div>
 
       {/* REPLY / ATTACHMENTS BAR */}
-      {(replyTo || pendingFiles.length > 0 || voice?.recording) && (
+      {(replyTo || pendingFiles.length > 0) && (
         <div className="px-3 py-2 surface border-t border-white/5 text-sm">
           {replyTo && (
             <div className="flex items-start gap-2 mb-1">
@@ -298,12 +327,6 @@ export default function Chat() {
                   <button onClick={() => setPendingFiles((p) => p.filter(x => x.id !== f.id))} className="text-white/55 hover:text-white">✕</button>
                 </div>
               ))}
-            </div>
-          )}
-          {voice?.recording && (
-            <div className="text-bad font-medium flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-bad animate-pulse-soft" />
-              Запись {voice.kind === 'video_note' ? 'кружка' : 'голосового'}…
             </div>
           )}
         </div>
@@ -338,10 +361,22 @@ export default function Chat() {
             className="flex-1 bg-ink-700 rounded-2xl px-4 py-2.5 outline-none resize-none max-h-32 placeholder:text-white/40 border border-white/[0.06] focus:border-brand-indigo/40"
           />
 
-          {!text && pendingFiles.length === 0 && !voice?.blobReady ? (
+          {!text && pendingFiles.length === 0 ? (
             <>
-              <IconButton type="button" onClick={() => recordVoice(false)} title="Голосовое">🎙</IconButton>
-              <IconButton type="button" onClick={() => recordVoice(true)} title="Кружок">⭕</IconButton>
+              <HoldButton
+                title="Голосовое — нажми и держи"
+                onHoldStart={() => startHoldRecord(false)}
+                onHoldEnd={(cancel) => stopHoldRecord(cancel)}
+                active={voice?.recording && voice?.kind === 'voice'}
+                emoji="🎙"
+              />
+              <HoldButton
+                title="Кружок — нажми и держи"
+                onHoldStart={() => startHoldRecord(true)}
+                onHoldEnd={(cancel) => stopHoldRecord(cancel)}
+                active={voice?.recording && voice?.kind === 'video_note'}
+                emoji="🎥"
+              />
             </>
           ) : (
             <button type="submit" className="press w-11 h-11 grid place-items-center rounded-full bg-hero-gradient text-white shadow-glow-brand">
@@ -352,6 +387,9 @@ export default function Chat() {
           )}
         </form>
       )}
+
+      {/* Push-to-hold recording overlay */}
+      {voice?.recording && <RecordingOverlay voice={voice} onCancel={() => stopHoldRecord(true)} onSend={() => stopHoldRecord(false)} />}
 
       {/* Action sheet */}
       <Sheet open={!!actionMsg} onClose={() => setActionMsg(null)} title="Сообщение">
@@ -451,7 +489,7 @@ function Attachment({ a }) {
   if (a.kind === 'photo' || (a.mime || '').startsWith('image/'))
     return <img src={url} className="rounded-xl mt-1.5 max-h-72" />;
   if (a.kind === 'video_note')
-    return <video src={url} controls className="rounded-full mt-1.5 w-48 h-48 object-cover bg-black" />;
+    return <video src={url} controls playsInline className="rounded-3xl mt-1.5 w-56 h-56 object-cover bg-black border border-white/10" />;
   if (a.kind === 'video' || (a.mime || '').startsWith('video/'))
     return <video src={url} controls className="rounded-xl mt-1.5 max-h-80" />;
   if (a.kind === 'voice' || (a.mime || '').startsWith('audio/'))
@@ -593,6 +631,84 @@ function flashToast(text, tone = 'ok') {
   document.body.appendChild(el);
   setTimeout(() => { el.style.transition = 'all .8s'; el.style.opacity = 0; el.style.transform = 'translate(-50%,-30px)'; }, 1200);
   setTimeout(() => el.remove(), 2200);
+}
+
+// ---- Push-to-hold button: starts on press, stops on release. Drag-up = cancel ----
+function HoldButton({ onHoldStart, onHoldEnd, active, emoji, title }) {
+  const ref = React.useRef(null);
+  const dragRef = React.useRef({ startY: 0, cancel: false });
+
+  const start = (e) => {
+    e.preventDefault();
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    dragRef.current = { startY: y, cancel: false };
+    onHoldStart();
+  };
+  const move = (e) => {
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    const dy = dragRef.current.startY - y;
+    if (dy > 80) dragRef.current.cancel = true;
+  };
+  const end = (e) => {
+    e?.preventDefault?.();
+    onHoldEnd(dragRef.current.cancel);
+  };
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      title={title}
+      onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={(e) => { if (active) end(e); }}
+      onTouchStart={start} onTouchMove={move} onTouchEnd={end} onTouchCancel={() => onHoldEnd(true)}
+      onContextMenu={(e) => e.preventDefault()}
+      className={`press w-11 h-11 grid place-items-center rounded-full text-xl select-none transition
+        ${active ? 'bg-bad text-white scale-110 shadow-glow-brand' : 'hover:bg-white/10 text-white/85'}`}
+    >
+      <span className="pointer-events-none">{emoji}</span>
+    </button>
+  );
+}
+
+// ---- Recording overlay: shows mic/cam, level, duration, "release to send / drag up to cancel" ----
+function RecordingOverlay({ voice, onCancel, onSend }) {
+  const [elapsed, setElapsed] = React.useState(0);
+  React.useEffect(() => {
+    const t = setInterval(() => setElapsed(Date.now() - voice.startedAt), 100);
+    return () => clearInterval(t);
+  }, [voice.startedAt]);
+  const mm = String(Math.floor(elapsed / 60000)).padStart(2, '0');
+  const ss = String(Math.floor(elapsed / 1000) % 60).padStart(2, '0');
+  const isCircle = voice.kind === 'video_note';
+  return (
+    <div className="fixed inset-0 z-50 bg-ink-950/80 backdrop-blur-md flex flex-col items-center justify-center p-6">
+      <div className="surface-strong rounded-4xl p-8 w-full max-w-sm text-center">
+        <div className="font-display text-base text-white/70 mb-3">
+          {isCircle ? 'Запись кружка' : 'Запись голосового'}
+        </div>
+        <div className="relative mx-auto w-32 h-32 mb-4">
+          {/* Pulsing circles */}
+          <div className="absolute inset-0 rounded-full bg-bad/30 animate-ping" />
+          <div className="absolute inset-2 rounded-full bg-bad/40 animate-pulse-soft" />
+          <div className="relative w-full h-full rounded-full bg-bad text-white grid place-items-center text-5xl shadow-2xl">
+            {isCircle ? '🎥' : '🎙'}
+          </div>
+        </div>
+        <div className="font-mono text-2xl text-white">{mm}:{ss}</div>
+        <div className="text-xs text-white/55 mt-3">Отпусти, чтобы отправить · Свайп вверх — отменить</div>
+        <div className="mt-5 flex justify-center gap-3">
+          <button onClick={onCancel}
+            className="press px-5 py-2.5 rounded-full bg-white/10 border border-white/15 font-semibold">
+            Отмена
+          </button>
+          <button onClick={onSend}
+            className="press px-5 py-2.5 rounded-full bg-hero-gradient font-semibold shadow-glow-brand">
+            Отправить
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ---- WebRTC P2P (DM only for now) ----

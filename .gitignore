@@ -4,3 +4,12 @@ server/.env
 web/dist/
 .DS_Store
 *.log
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local Claude settings
+.claude/settings.local.json
