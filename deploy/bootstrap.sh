@@ -147,7 +147,9 @@ fi
 
 # ---------- 8. PM2 ----------
 bold "==> [8/8] PM2"
-sudo -u "$APP_USER" bash -lc "pm2 start '$APP_DIR/deploy/ecosystem.config.cjs' || pm2 reload '$APP_DIR/deploy/ecosystem.config.cjs' --update-env"
+# Delete any stale registration (with the old paths) before starting fresh.
+sudo -u "$APP_USER" bash -lc "pm2 delete neuro-server >/dev/null 2>&1 || true"
+sudo -u "$APP_USER" bash -lc "pm2 start '$APP_DIR/deploy/ecosystem.config.cjs'"
 sudo -u "$APP_USER" bash -lc "pm2 save"
 sudo env PATH="$PATH:/usr/bin" pm2 startup systemd -u "$APP_USER" --hp "$APP_HOME" || true
 

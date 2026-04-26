@@ -60,13 +60,12 @@ sudo -u "$APP_USER" bash -lc "cd '$APP_DIR/server' && (npm ci --omit=dev || npm 
 sudo -u "$APP_USER" bash -lc "cd '$APP_DIR/web'    && (npm ci || npm install) && npm run build"
 
 # ---------- 3. PM2 ----------
-bold "==> PM2 reload"
+# We `delete` first so PM2 picks up any path/script changes from the
+# updated ecosystem.config.cjs. `reload` keeps the old in-memory config.
+bold "==> PM2 restart (re-reading config)"
 sudo -u "$APP_USER" bash -lc "
-  if pm2 list | grep -q neuro-server; then
-    pm2 reload '$APP_DIR/deploy/ecosystem.config.cjs' --update-env
-  else
-    pm2 start  '$APP_DIR/deploy/ecosystem.config.cjs'
-  fi
+  pm2 delete neuro-server >/dev/null 2>&1 || true
+  pm2 start  '$APP_DIR/deploy/ecosystem.config.cjs'
   pm2 save
 "
 
