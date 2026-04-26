@@ -122,7 +122,7 @@ deploy_nginx nginx-http.conf
 
 # ---------- 7. certbot ----------
 bold "==> [7/8] Let's Encrypt"
-if [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
+if sudo test -d "/etc/letsencrypt/live/$DOMAIN"; then
   note "    certificate for $DOMAIN already exists"
 else
   if sudo certbot certonly --webroot -w /var/www/letsencrypt \
@@ -140,7 +140,7 @@ else
 fi
 
 # If we have a cert now, switch to the HTTPS config.
-if [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
+if sudo test -d "/etc/letsencrypt/live/$DOMAIN"; then
   bold "==> Switching nginx to HTTPS"
   deploy_nginx nginx.conf
 fi
@@ -154,7 +154,7 @@ sudo -u "$APP_USER" bash -lc "pm2 save"
 sudo env PATH="$PATH:/usr/bin" pm2 startup systemd -u "$APP_USER" --hp "$APP_HOME" || true
 
 echo
-if [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
+if sudo test -d "/etc/letsencrypt/live/$DOMAIN"; then
   bold "==> Done. Open https://$DOMAIN"
 else
   bold "==> Done. Open http://$DOMAIN  (https not ready — see certbot warnings above)"
