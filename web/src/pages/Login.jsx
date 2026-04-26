@@ -33,7 +33,7 @@ export default function Login() {
       <GradientHalo />
       <div className="relative w-full max-w-sm animate-slide-up">
         <div className="text-center mb-9">
-          <div className="inline-grid place-items-center mb-4 animate-pop">
+          <div className="inline-grid place-items-center mb-4 animate-pop sparkle">
             <NeuroMark size={56} glow />
           </div>
           <h1 className="font-display text-5xl font-bold text-hero leading-none">Neuro</h1>

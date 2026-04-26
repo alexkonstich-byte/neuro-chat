@@ -148,7 +148,7 @@ export default function Chats() {
                   <Avatar user={peerObj} size={48} />
                 )}
                 {c.peer && online[c.peer.id] && !isService && !isSelf && (
-                  <span className="absolute right-0 bottom-0 w-3 h-3 rounded-full bg-ok ring-2 ring-ink-950" />
+                  <span className="online-dot absolute right-0 bottom-0 w-3 h-3 rounded-full bg-ok ring-2 ring-ink-950" />
                 )}
               </div>
               <div className="flex-1 min-w-0">

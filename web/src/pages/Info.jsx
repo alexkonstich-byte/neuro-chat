@@ -62,7 +62,7 @@ export default function Info() {
               <Link to="/register">Начать →</Link>
             </Button>
             <Button variant="ghost" size="lg" asChild>
-              <a href="https://github.com/alexserguntsov/neuro" target="_blank" rel="noreferrer">⭐ Open Source</a>
+              <a href="https://github.com/alexkonstich-byte/neuro-chat" target="_blank" rel="noreferrer">⭐ Open Source</a>
             </Button>
           </div>
           <div className="mt-3 text-xs text-white/45">Native iOS / Android — скоро. Уведомление придёт в чат Neuro.</div>
@@ -127,7 +127,7 @@ export default function Info() {
               <div className="mt-4 flex items-center justify-center sm:justify-start gap-2">
                 <Button asChild size="sm"><Link to="/login">Войти</Link></Button>
                 <Button variant="outline" size="sm" asChild>
-                  <a href="https://github.com/alexserguntsov/neuro" target="_blank" rel="noreferrer">GitHub</a>
+                  <a href="https://github.com/alexkonstich-byte/neuro-chat" target="_blank" rel="noreferrer">GitHub</a>
                 </Button>
               </div>
             </div>
