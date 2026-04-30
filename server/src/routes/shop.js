@@ -29,7 +29,7 @@ r.post('/buy', (req, res) => {
   const item = db.prepare(`SELECT * FROM shop_items WHERE code = ? AND active = 1`).get(code);
   if (!item) return res.status(404).json({ error: 'no_item' });
   if (item.is_exclusive) return res.status(403).json({ error: 'exclusive_only' });
-  if (item.premium_only && !(req.user.premium_until > now())) return res.status(403).json({ error: 'premium_required' });
+  if (item.premium_only && !(req.user.premium_until > now()) && !req.user.is_vip) return res.status(403).json({ error: 'premium_required' });
 
   const payload = item.payload ? JSON.parse(item.payload) : {};
 
@@ -40,7 +40,15 @@ r.post('/buy', (req, res) => {
     if (owned) return res.status(400).json({ error: 'already_owned' });
   }
 
-  const txId = spendXp(req.user.id, item.price_xp, 'shop_buy', `Покупка: ${item.name}`, REFUND_WINDOW_MS, code);
+  // VIP perk: cosmetics are free.
+  const vipFree = !!req.user.is_vip && ['background', 'border', 'prefix'].includes(item.kind);
+  const effectivePrice = vipFree ? 0 : item.price_xp;
+
+  const txId = effectivePrice > 0
+    ? spendXp(req.user.id, effectivePrice, 'shop_buy', `Покупка: ${item.name}`, REFUND_WINDOW_MS, code)
+    : (db.prepare(`INSERT INTO transactions(user_id, kind, amount_xp, ref_item_code, note, created_at, refundable_until)
+                   VALUES(?, 'shop_buy', 0, ?, ?, ?, 0)`)
+        .run(req.user.id, code, `VIP-выдача: ${item.name}`, now()).lastInsertRowid);
   if (!txId) return res.status(400).json({ error: 'not_enough_xp' });
 
   const t = now();

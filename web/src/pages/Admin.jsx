@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { BackButton, Button, Card, Tag, Field, Input, Section, PageHeader } from '../components/ui.jsx';
-import { toast } from '../store.js';
+import { Avatar, ProfileBackground } from '../components/UserChip.jsx';
+import { useAuth, toast } from '../store.js';
 
 export default function Admin() {
   const [tab, setTab] = useState('users');
@@ -218,12 +219,42 @@ function WordsTab() {
 }
 
 function ExclusiveTab() {
+  const me = useAuth((s) => s.user);
   const [list, setList] = useState([]);
   const [form, setForm] = useState({ code: '', kind: 'background', name: '', description: '', price_xp: 0, gradient: '', color: '' });
   const [editing, setEditing] = useState(null); // item id being edited
   const [editForm, setEditForm] = useState({});
   const load = () => api.adminExclusiveItems().then((r) => setList(r.items));
   useEffect(() => { load(); }, []);
+
+  // Live preview chrome that mirrors what the user will see in their profile.
+  const Preview = ({ kind, gradient, color, name }) => (
+    <div className="rounded-2xl overflow-hidden bg-ink-800 border border-white/10">
+      {kind === 'background' ? (
+        <ProfileBackground code="__preview__" payloadGradient={gradient || 'from-indigo-500 via-fuchsia-500 to-cyan-400'} className="aspect-[5/3] grid place-items-center">
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="relative grid place-items-center">
+            <Avatar user={me} size={56} />
+            <div className="text-white/90 mt-1.5 font-display font-semibold text-sm">{name || 'Превью'}</div>
+          </div>
+        </ProfileBackground>
+      ) : kind === 'border' ? (
+        <div className="grid place-items-center py-6">
+          <div className="relative w-20 h-20">
+            <div className="absolute inset-0 rounded-full" style={{ boxShadow: `0 0 0 3px ${color || '#fbbf24'}` }} />
+            <div className="absolute inset-[3px] rounded-full overflow-hidden bg-ink-700">
+              {me?.avatar ? <img src={me.avatar} className="w-full h-full object-cover" /> : <div className="w-full h-full grid place-items-center font-bold">{(me?.displayName || '?').slice(0, 2)}</div>}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="py-5 text-center text-white/85">
+          <span className="font-bold opacity-90 mr-1" style={color ? { color } : null}>{name || 'PREFIX'}</span>
+          <span>{me?.displayName || me?.username}</span>
+        </div>
+      )}
+    </div>
+  );
 
   const buildPayload = (kind, { gradient, color }) => {
     if (kind === 'background') return gradient ? { gradient } : {};
@@ -283,6 +314,10 @@ function ExclusiveTab() {
             </div>
           </Field>
         )}
+        <div className="my-2">
+          <div className="text-[11px] uppercase tracking-widest text-white/45 font-mono mb-1.5">Live-превью</div>
+          <Preview kind={form.kind} gradient={form.gradient} color={form.color} name={form.name} />
+        </div>
         <Button onClick={create} variant="premium" className="w-full">Создать эксклюзив</Button>
       </Card>
 

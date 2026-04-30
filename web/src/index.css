@@ -5,7 +5,8 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  /* Default theme = midnight */
+  :root, [data-theme="midnight"] {
     --bg: #08090F;
     --bg-elev: #0E1018;
     --bg-elev-2: #13151F;
@@ -22,9 +23,76 @@
     --brand-2: #C56BFF;
     --brand-3: #65DEFF;
 
-    /* Composer height for safe-area-aware page padding */
     --composer-h: 64px;
   }
+
+  [data-theme="aurora"] {
+    --bg: #0E0521;
+    --bg-elev: #15082D;
+    --bg-elev-2: #1F0E40;
+    --bg-elev-3: #2D175A;
+    --line: rgba(255,170,255,0.10);
+    --line-strong: rgba(255,170,255,0.18);
+    --brand-1: #7C3AED;
+    --brand-2: #EC4899;
+    --brand-3: #C56BFF;
+  }
+
+  [data-theme="sunset"] {
+    --bg: #1A0A12;
+    --bg-elev: #261018;
+    --bg-elev-2: #341823;
+    --bg-elev-3: #4A2334;
+    --line: rgba(255,200,170,0.10);
+    --line-strong: rgba(255,200,170,0.18);
+    --brand-1: #F97316;
+    --brand-2: #DB2777;
+    --brand-3: #FBBF24;
+  }
+
+  [data-theme="ocean"] {
+    --bg: #050E1A;
+    --bg-elev: #07142B;
+    --bg-elev-2: #0B1F3F;
+    --bg-elev-3: #112E55;
+    --line: rgba(170,210,255,0.08);
+    --line-strong: rgba(170,210,255,0.16);
+    --brand-1: #0EA5E9;
+    --brand-2: #14B8A6;
+    --brand-3: #65DEFF;
+  }
+
+  [data-theme="mono"] {
+    --bg: #0A0A0A;
+    --bg-elev: #141414;
+    --bg-elev-2: #1F1F1F;
+    --bg-elev-3: #2B2B2B;
+    --line: rgba(255,255,255,0.06);
+    --line-strong: rgba(255,255,255,0.12);
+    --brand-1: #A1A1AA;
+    --brand-2: #71717A;
+    --brand-3: #E4E4E7;
+  }
+
+  [data-theme="daylight"] {
+    --bg: #F5F6FA;
+    --bg-elev: #FFFFFF;
+    --bg-elev-2: #EEF1F8;
+    --bg-elev-3: #DFE3EE;
+    --line: rgba(0,0,0,0.06);
+    --line-strong: rgba(0,0,0,0.12);
+
+    --text: rgba(20,22,32,0.92);
+    --text-2: rgba(20,22,32,0.65);
+    --text-3: rgba(20,22,32,0.45);
+    --text-4: rgba(20,22,32,0.28);
+
+    --brand-1: #4F46E5;
+    --brand-2: #C026D3;
+    --brand-3: #0EA5E9;
+  }
+  [data-theme="daylight"] body { color: var(--text); background: var(--bg); }
+  [data-theme="daylight"] body * ::selection { background: rgba(79,70,229,0.25); color: #111; }
 
   html, body, #root { height: 100%; }
   html { color-scheme: dark; }
@@ -108,6 +176,39 @@
     animation: spinSlow 6s linear infinite;
   }
   @keyframes spinSlow { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+  /* Animated avatar border rings — applied as a wrapping div with mask */
+  .border-rainbow,
+  .border-pulse,
+  .border-aurora,
+  .border-ember {
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+  }
+  .border-rainbow {
+    background: conic-gradient(from 0deg, #ff5b6c, #ffaa3a, #fff36b, #5ce28a, #5cc8ff, #b388ff, #ff5b6c);
+    animation: spinSlow 6s linear infinite;
+  }
+  .border-pulse {
+    background: conic-gradient(from 0deg, var(--brand-1), var(--brand-2), var(--brand-3), var(--brand-1));
+    animation: pulseRing 2.4s ease-in-out infinite, spinSlow 9s linear infinite;
+  }
+  .border-aurora {
+    background: conic-gradient(from 0deg, #34D399, #65DEFF, #C56BFF, #34D399);
+    filter: blur(0.5px) saturate(1.1);
+    animation: spinSlow 8s linear infinite;
+  }
+  .border-ember {
+    background: conic-gradient(from 0deg, #FFB13B, #FF5BA3, #FFB13B);
+    animation: spinSlow 4s linear infinite, pulseRing 1.8s ease-in-out infinite;
+    box-shadow: 0 0 14px rgba(255,91,163,0.45);
+  }
+  @keyframes pulseRing {
+    0%, 100% { filter: brightness(1); }
+    50%      { filter: brightness(1.4) drop-shadow(0 0 4px currentColor); }
+  }
 
   /* Shimmer for skeletons / pending */
   .shimmer {

@@ -9,6 +9,7 @@ import Info from './pages/Info.jsx';
 import Chat from './pages/Chat.jsx';
 import Profile from './pages/Profile.jsx';
 import Shop from './pages/Shop.jsx';
+import ShopItem from './pages/ShopItem.jsx';
 import Casino from './pages/Casino.jsx';
 import Admin from './pages/Admin.jsx';
 import Settings from './pages/Settings.jsx';
@@ -85,9 +86,17 @@ function SocketBridge() {
 
 export default function App() {
   const load = useAuth((s) => s.load);
+  const user = useAuth((s) => s.user);
   const toasts = useToasts((s) => s.list);
   const removeToast = useToasts((s) => s.remove);
   useEffect(() => { load(); }, [load]);
+
+  // Apply theme: prefer the user's saved theme, fall back to localStorage, fall back to "midnight".
+  useEffect(() => {
+    const t = user?.theme || localStorage.getItem('neuro_theme') || 'midnight';
+    document.documentElement.setAttribute('data-theme', t);
+  }, [user?.theme]);
+
   return (
     <>
       <SocketBridge />
@@ -102,6 +111,7 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:username" element={<Profile />} />
           <Route path="/shop" element={<Shop />} />
+          <Route path="/shop/item/:code" element={<ShopItem />} />
           <Route path="/casino" element={<Casino />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/users/:id" element={<Admin />} />

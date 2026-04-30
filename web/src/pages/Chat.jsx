@@ -7,6 +7,7 @@ import { Avatar, NameLine } from '../components/UserChip.jsx';
 import { BackButton, IconButton, Sheet, Button, Tag, Field, Input, Card } from '../components/ui.jsx';
 import GroupCall from '../components/GroupCall.jsx';
 import { useContextMenu } from '../components/ContextMenu.jsx';
+import MediaViewer from '../components/MediaViewer.jsx';
 import { toast } from '../store.js';
 
 const QUICK_REACTIONS = ['❤️', '👍', '😂', '🔥', '😮', '😢', '🎉'];
@@ -32,8 +33,28 @@ export default function Chat() {
   const [membersOpen, setMembersOpen] = useState(false);
   const [muteOpen, setMuteOpen] = useState(false);
   const [nicknameOpen, setNicknameOpen] = useState(false);
+  const [viewer, setViewer] = useState({ open: false, items: [], index: 0 });
   const msgCtx  = useContextMenu();
   const userCtx = useContextMenu();
+
+  // All attachments in this chat — used to flip between photos/videos in the viewer.
+  const allMediaAtt = React.useMemo(() => {
+    const out = [];
+    for (const m of messages) {
+      if (m.deletedAt) continue;
+      for (const a of (m.attachments || [])) {
+        const k = a.kind || (a.mime?.startsWith('image/') ? 'photo' : a.mime?.startsWith('video/') ? 'video' : a.mime?.startsWith('audio/') ? 'voice' : 'file');
+        out.push({ id: a.id, kind: k, url: `/uploads/${a.path}`, name: a.path?.split('/').pop(), mime: a.mime, duration_ms: a.duration_ms });
+      }
+    }
+    return out;
+  }, [messages]);
+
+  const openMedia = (attachmentId) => {
+    const idx = allMediaAtt.findIndex((x) => x.id === attachmentId);
+    if (idx < 0) return;
+    setViewer({ open: true, items: allMediaAtt, index: idx });
+  };
   const fileInput = useRef(null);
   const galleryInput = useRef(null);
   const scrollRef = useRef(null);
@@ -333,6 +354,8 @@ export default function Chat() {
                       onReact: (emoji) => getSocket().emit('message:react', { id: m.id, emoji }),
                     }))}
                     onReact={reactTo}
+                    onSwipeReply={() => setReplyTo(m)}
+                    onOpenAttachment={openMedia}
                   />
                 ))}
               </div>
@@ -439,6 +462,13 @@ export default function Chat() {
                      current={myNickname}
                      onChanged={() => api.chat(chatId).then((r) => setChatMeta(r))} />
 
+      <MediaViewer
+        open={viewer.open}
+        onClose={() => setViewer((v) => ({ ...v, open: false }))}
+        items={viewer.items}
+        index={viewer.index}
+      />
+
       {callState && <CallOverlay chat={chatMeta} state={callState} setState={setCallState} />}
       {groupCall && (
         <GroupCall
@@ -453,43 +483,72 @@ export default function Chat() {
   );
 }
 
-function MessageBubble({ m, mine, sender, showSender, senderLink, contextHandlers }) {
+function MessageBubble({ m, mine, sender, showSender, senderLink, contextHandlers, onSwipeReply, onOpenAttachment }) {
   const reactions = m.reactions ? Object.entries(m.reactions) : [];
   const senderColorIdx = (sender?.id || 0) % SENDER_COLORS.length;
+  const wrapRef = React.useRef(null);
+  const dragRef = React.useRef({ startX: 0, dx: 0, dragging: false });
+  const [dx, setDx] = React.useState(0);
+
+  // Telegram-style swipe-right to reply (touch only).
+  const onTouchStart = (e) => {
+    dragRef.current = { startX: e.touches[0].clientX, dx: 0, dragging: true };
+  };
+  const onTouchMove = (e) => {
+    if (!dragRef.current.dragging) return;
+    let v = e.touches[0].clientX - dragRef.current.startX;
+    if (v < 0) v = 0;
+    if (v > 80) v = 80;
+    dragRef.current.dx = v;
+    setDx(v);
+  };
+  const onTouchEnd = () => {
+    if (!dragRef.current.dragging) return;
+    if (dragRef.current.dx > 60 && onSwipeReply) onSwipeReply();
+    dragRef.current.dragging = false;
+    setDx(0);
+  };
 
   return (
-    <div
-      {...(contextHandlers || {})}
-      className={`bubble-in my-0.5 px-3 py-2 max-w-full ${mine
-        ? 'bg-hero-gradient text-white rounded-2xl rounded-br-md shadow-glow-brand/40'
-        : 'bg-ink-700 text-white rounded-2xl rounded-bl-md'}`}>
-      {showSender && sender && (
-        <div className={`text-xs font-semibold mb-0.5 ${SENDER_COLORS[senderColorIdx]}`}>
-          {senderLink
-            ? <Link to={senderLink} className="hover:underline"><NameLine user={sender} withEmoji={false} /></Link>
-            : <NameLine user={sender} withEmoji={false} />}
+    <div className="relative" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+      {/* Reply icon revealed under swipe */}
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 text-brand-sky text-xl"
+           style={{ opacity: Math.min(1, dx / 50) }}>↩︎</div>
+      <div
+        ref={wrapRef}
+        {...(contextHandlers || {})}
+        style={{ transform: `translateX(${dx}px)`, transition: dx === 0 ? 'transform 200ms cubic-bezier(.2,.9,.3,1.4)' : 'none' }}
+        className={`bubble-in my-0.5 px-3 py-2 max-w-full ${mine
+          ? 'bg-hero-gradient text-white rounded-2xl rounded-br-md shadow-glow-brand/40'
+          : 'bg-ink-700 text-white rounded-2xl rounded-bl-md'}`}>
+        {showSender && sender && (
+          <div className={`text-xs font-semibold mb-0.5 ${SENDER_COLORS[senderColorIdx]}`}>
+            {senderLink
+              ? <Link to={senderLink} className="hover:underline"><NameLine user={sender} withEmoji={false} /></Link>
+              : <NameLine user={sender} withEmoji={false} />}
+          </div>
+        )}
+        {m.replyTo && (
+          <div className="text-xs opacity-80 border-l-2 border-white/40 pl-2 mb-1.5">↩︎ ответ</div>
+        )}
+        {m.deletedAt ? (
+          <span className="italic opacity-70">Сообщение удалено</span>
+        ) : (
+          <>
+            {m.text && <div className="whitespace-pre-wrap break-words leading-snug">{m.text}</div>}
+            {m.attachments?.map((a) => <Attachment key={a.id} a={a} onOpen={onOpenAttachment} />)}
+          </>
+        )}
+        {reactions.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {reactions.map(([emoji, users]) => (
+              <span key={emoji} className="text-xs bg-black/25 rounded-full px-2 py-0.5">{emoji} {users.length}</span>
+            ))}
+          </div>
+        )}
+        <div className="text-[10px] opacity-60 text-right mt-0.5 font-mono">
+          {formatTime(m.createdAt)}{m.editedAt && ' · ред.'}
         </div>
-      )}
-      {m.replyTo && (
-        <div className="text-xs opacity-80 border-l-2 border-white/40 pl-2 mb-1.5">↩︎ ответ</div>
-      )}
-      {m.deletedAt ? (
-        <span className="italic opacity-70">Сообщение удалено</span>
-      ) : (
-        <>
-          {m.text && <div className="whitespace-pre-wrap break-words leading-snug">{m.text}</div>}
-          {m.attachments?.map((a) => <Attachment key={a.id} a={a} />)}
-        </>
-      )}
-      {reactions.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap gap-1">
-          {reactions.map(([emoji, users]) => (
-            <span key={emoji} className="text-xs bg-black/25 rounded-full px-2 py-0.5">{emoji} {users.length}</span>
-          ))}
-        </div>
-      )}
-      <div className="text-[10px] opacity-60 text-right mt-0.5 font-mono">
-        {formatTime(m.createdAt)}{m.editedAt && ' · ред.'}
       </div>
     </div>
   );
@@ -500,17 +559,39 @@ const SENDER_COLORS = [
   'text-pink-300', 'text-cyan-300', 'text-violet-300', 'text-rose-300',
 ];
 
-function Attachment({ a }) {
+function Attachment({ a, onOpen }) {
   const url = `/uploads/${a.path}`;
-  if (a.kind === 'photo' || (a.mime || '').startsWith('image/'))
-    return <img src={url} className="rounded-xl mt-1.5 max-h-72" />;
-  if (a.kind === 'video_note')
-    return <video src={url} controls playsInline className="rounded-3xl mt-1.5 w-56 h-56 object-cover bg-black border border-white/10" />;
-  if (a.kind === 'video' || (a.mime || '').startsWith('video/'))
-    return <video src={url} controls className="rounded-xl mt-1.5 max-h-80" />;
-  if (a.kind === 'voice' || (a.mime || '').startsWith('audio/'))
-    return <audio src={url} controls className="mt-1.5 w-full" />;
-  return <a href={url} target="_blank" rel="noreferrer" className="mt-1.5 inline-flex items-center gap-2 underline opacity-90">📄 {a.path.split('/').pop()}</a>;
+  const open = (e) => { e?.stopPropagation?.(); onOpen?.(a.id); };
+  const isImage = a.kind === 'photo' || (a.mime || '').startsWith('image/');
+  const isVideoNote = a.kind === 'video_note';
+  const isVideo = a.kind === 'video' || (a.mime || '').startsWith('video/');
+  const isAudio = a.kind === 'voice' || (a.mime || '').startsWith('audio/');
+
+  if (isImage)
+    return <img src={url} onClick={open} className="rounded-xl mt-1.5 max-h-72 cursor-zoom-in hover:opacity-95" />;
+  if (isVideoNote)
+    return (
+      <button onClick={open} className="press block mt-1.5 relative w-56 h-56 rounded-[28%] overflow-hidden bg-black border border-white/10">
+        <video src={url} muted playsInline className="w-full h-full object-cover" />
+        <span className="absolute inset-0 grid place-items-center text-3xl bg-black/20 text-white">▶</span>
+      </button>
+    );
+  if (isVideo)
+    return (
+      <button onClick={open} className="press relative block mt-1.5 rounded-xl overflow-hidden">
+        <video src={url} muted playsInline className="rounded-xl max-h-80" />
+        <span className="absolute inset-0 grid place-items-center text-4xl bg-black/30">▶</span>
+      </button>
+    );
+  if (isAudio)
+    return (
+      <button onClick={open} className="press mt-1.5 w-full flex items-center gap-3 bg-black/25 rounded-2xl px-3 py-2 text-left">
+        <span className="w-9 h-9 rounded-full bg-hero-gradient grid place-items-center text-base">▶</span>
+        <span className="text-sm flex-1 truncate">{a.kind === 'voice' ? 'Голосовое' : 'Аудио'}</span>
+        {a.duration_ms ? <span className="text-[11px] font-mono opacity-70">{Math.round(a.duration_ms / 1000)}″</span> : null}
+      </button>
+    );
+  return <button onClick={open} className="press mt-1.5 inline-flex items-center gap-2 underline opacity-90 text-left">📄 {a.path.split('/').pop()}</button>;
 }
 
 function MembersSheet({ open, onClose, chat, me, onChanged }) {

@@ -98,12 +98,23 @@ export const api = {
       headers: { Authorization: `Bearer ${auth.get()}` },
     }).then(r => r.json());
   },
-  uploadAvatar: (file) => {
+  uploadAvatar: (file, kind) => {
     const fd = new FormData();
     fd.append('avatar', file);
+    if (kind) fd.append('kind', kind);
     return fetch('/api/uploads/avatar', {
       method: 'POST', body: fd,
       headers: { Authorization: `Bearer ${auth.get()}` },
-    }).then(r => r.json());
+    }).then(async (r) => {
+      if (!r.ok) {
+        let body = {}; try { body = await r.json(); } catch {}
+        throw Object.assign(new Error(body?.error || 'http_error'), { status: r.status, data: body });
+      }
+      return r.json();
+    });
   },
+  dropVideoAvatar: () => fetch('/api/uploads/avatar/video', {
+    method: 'DELETE', headers: { Authorization: `Bearer ${auth.get()}` },
+  }).then((r) => r.json()),
+  setTutorialDone: () => request('/api/profile/me', { method: 'PATCH', body: JSON.stringify({ tutorialDone: true }) }),
 };

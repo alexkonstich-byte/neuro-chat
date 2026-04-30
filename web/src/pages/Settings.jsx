@@ -28,11 +28,14 @@ export default function Settings() {
   const xpPerMessage = adminSettings.find((s) => s.key === 'xp_per_message')?.value;
 
   const setTheme = async (theme) => {
+    // Optimistic: apply right away so the user sees it instantly.
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('neuro_theme', theme);
     try {
       const r = await api.patchMe({ theme });
       setUser(r.user);
       toast.ok('Тема обновлена');
-    } catch (e) { toast.bad('Не удалось'); }
+    } catch (e) { toast.bad('Не удалось сохранить — но тема применена'); }
   };
 
   return (
@@ -56,7 +59,7 @@ export default function Settings() {
               );
             })}
           </div>
-          <div className="mt-2 text-[11px] text-white/45">Полная поддержка тем добавляется в Phase 2 — сейчас выбор сохраняется и применит акцент при загрузке.</div>
+          <div className="mt-2 text-[11px] text-white/45">Палитра меняется мгновенно. Ноды используют CSS-переменные из <span className="font-mono">--brand-*</span> и <span className="font-mono">--bg-*</span>.</div>
         </Card>
 
         <Section>Опыт</Section>

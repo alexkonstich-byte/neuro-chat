@@ -1,29 +1,48 @@
 import React from 'react';
 
-export function Avatar({ user, size = 40, ring = true }) {
+export function Avatar({ user, size = 40, ring = true, allowVideo = true }) {
   const px = size + 'px';
   const url = user?.avatar || null;
+  const videoUrl = user?.videoAvatar || null;
   const initials = (user?.displayName || user?.username || '?').slice(0, 2).toUpperCase();
   const border = user?.activeBorder;
   const isRainbow = border === 'border_rainbow';
+  const isPulse   = border === 'border_pulse';
+  const isAurora  = border === 'border_aurora';
+  const isEmber   = border === 'border_ember';
   const ringColor =
     border === 'border_silver' ? '#c0c0c0' :
-    border === 'border_gold' ? '#fbbf24' :
-    border === 'border_neon' ? '#22d3ee' :
+    border === 'border_gold'   ? '#fbbf24' :
+    border === 'border_neon'   ? '#22d3ee' :
     null;
+  // VIP gets a subtle gold halo when no other border is set.
+  const vipHalo = !!user?.isVip && !border;
   return (
     <div className="relative shrink-0" style={{ width: px, height: px }}>
-      {ring && isRainbow && (
-        <div className="border-rainbow absolute inset-0 rounded-full" style={{ padding: 2 }} />
-      )}
+      {ring && isRainbow && <div className="border-rainbow absolute inset-0 rounded-full" style={{ padding: 2 }} />}
+      {ring && isPulse   && <div className="border-pulse  absolute inset-0 rounded-full" style={{ padding: 2 }} />}
+      {ring && isAurora  && <div className="border-aurora absolute inset-0 rounded-full" style={{ padding: 2 }} />}
+      {ring && isEmber   && <div className="border-ember  absolute inset-0 rounded-full" style={{ padding: 2 }} />}
       {ring && ringColor && (
         <div className="absolute inset-0 rounded-full" style={{ boxShadow: `0 0 0 2px ${ringColor}` }} />
       )}
-      <div
-        className="absolute inset-[2px] rounded-full bg-ink-700 flex items-center justify-center text-sm font-bold overflow-hidden"
-      >
-        {url ? <img src={url} alt="" className="w-full h-full object-cover" /> : <span>{initials}</span>}
+      {ring && vipHalo && (
+        <div className="absolute inset-0 rounded-full" style={{ boxShadow: '0 0 0 2px #f5c64f, 0 0 14px rgba(245,198,79,0.55)' }} />
+      )}
+      <div className="absolute inset-[2px] rounded-full bg-ink-700 flex items-center justify-center text-sm font-bold overflow-hidden">
+        {videoUrl && allowVideo ? (
+          <video src={videoUrl} autoPlay muted loop playsInline className="w-full h-full object-cover" />
+        ) : url ? (
+          <img src={url} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <span>{initials}</span>
+        )}
       </div>
+      {/* VIP crown badge in the lower-right (only when ring is on and avatar is large enough) */}
+      {ring && user?.isVip && size >= 36 && (
+        <div className="absolute -bottom-0.5 -right-0.5 w-[34%] h-[34%] rounded-full bg-premium-amber text-ink-950 grid place-items-center text-[10px] font-black shadow-md ring-2 ring-ink-950"
+             title="VIP">👑</div>
+      )}
     </div>
   );
 }

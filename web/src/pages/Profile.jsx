@@ -15,8 +15,10 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const fileRef = useRef(null);
+  const videoFileRef = useRef(null);
   const nav = useNavigate();
   const isMe = !username || username === me?.username;
+  const myCanVideo = isMe && (me?.isPremium || me?.isVip);
 
   useEffect(() => {
     if (!username) { setLocal(me); return; }
@@ -48,14 +50,60 @@ export default function Profile() {
   const upAvatar = async (e) => {
     const f = e.target.files?.[0]; if (!f) return;
     try {
-      const resized = await resizeImageFile(f, { maxSide: 512, minSide: 64, quality: 0.9, type: 'image/jpeg' });
-      await api.uploadAvatar(resized);
+      let payload;
+      if (f.type.startsWith('image/gif') || f.type.startsWith('image/webp')) {
+        // Animated images go up untouched (resize would kill the animation).
+        payload = f;
+      } else {
+        payload = await resizeImageFile(f, { maxSide: 512, minSide: 64, quality: 0.9, type: 'image/jpeg' });
+      }
+      await api.uploadAvatar(payload);
       const fresh = (await api.me()).user;
       setUser(fresh); setLocal(fresh);
       toast.ok('Аватар обновлён');
     } catch (err) {
       toast.bad('Не удалось загрузить аватар', err.message);
     }
+  };
+
+  const upVideoAvatar = async (e) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    if (!(me?.isPremium || me?.isVip)) {
+      toast.bad('Видео-аватар доступен только Premium / VIP');
+      return;
+    }
+    if (f.size > 8 * 1024 * 1024) {
+      toast.bad('Видео слишком большое', 'Максимум 8 МБ');
+      return;
+    }
+    // Quick duration check via a hidden video element.
+    const dur = await new Promise((res) => {
+      const v = document.createElement('video');
+      v.preload = 'metadata'; v.src = URL.createObjectURL(f);
+      v.onloadedmetadata = () => { res(v.duration || 0); URL.revokeObjectURL(v.src); };
+      v.onerror = () => res(0);
+    });
+    if (dur > 5.5) {
+      toast.bad('Слишком длинное видео', 'Максимум 5 секунд');
+      return;
+    }
+    try {
+      await api.uploadAvatar(f, 'avatar-video');
+      const fresh = (await api.me()).user;
+      setUser(fresh); setLocal(fresh);
+      toast.brand('Видео-аватар обновлён', 'Пол секунды любви для всех чатов');
+    } catch (err) {
+      toast.bad('Не удалось загрузить видео', err?.data?.error || err.message);
+    }
+  };
+
+  const dropVideoAvatar = async () => {
+    try {
+      await api.dropVideoAvatar();
+      const fresh = (await api.me()).user;
+      setUser(fresh); setLocal(fresh);
+      toast.ok('Видео-аватар снят');
+    } catch (e) { toast.bad('Не удалось'); }
   };
 
   const startDm = async () => {
@@ -80,8 +128,26 @@ export default function Profile() {
         <div className="relative flex flex-col items-center text-center text-white px-6 mt-2">
           <button onClick={() => isMe ? fileRef.current.click() : null} className="press relative">
             <Avatar user={user} size={108} />
+            {isMe && (
+              <span className="absolute -bottom-1 right-1 w-7 h-7 rounded-full bg-ink-950/85 grid place-items-center text-xs ring-2 ring-white/10">📷</span>
+            )}
           </button>
           <input ref={fileRef} type="file" hidden accept="image/*" onChange={upAvatar} />
+          <input ref={videoFileRef} type="file" hidden accept="video/mp4,video/webm" onChange={upVideoAvatar} />
+          {myCanVideo && (
+            <div className="mt-2 flex items-center gap-2 text-[11px]">
+              <button onClick={() => videoFileRef.current.click()}
+                className="press px-2.5 py-1 rounded-full bg-premium-amber/15 text-premium-amber border border-premium-amber/40">
+                {user.videoAvatar ? '🎬 Заменить видео-аватар' : '🎬 Загрузить видео-аватар'}
+              </button>
+              {user.videoAvatar && (
+                <button onClick={dropVideoAvatar} className="press px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/15">снять</button>
+              )}
+            </div>
+          )}
+          {isMe && !myCanVideo && (
+            <div className="mt-2 text-[11px] text-white/55">Видео-аватар — для Premium / VIP</div>
+          )}
           <div className="mt-4 font-display text-3xl"><NameLine user={user} /></div>
           {user.username && <div className="text-sm text-white/75 font-mono mt-0.5">@{user.username}</div>}
           {user.bio && <div className="mt-3 text-sm max-w-sm text-white/85">{user.bio}</div>}

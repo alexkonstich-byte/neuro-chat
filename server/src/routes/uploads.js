@@ -53,8 +53,27 @@ r.post('/avatar', avatarUpload.single('avatar'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'no_file' });
   const rel = path.relative(config.uploadDir, req.file.path).replaceAll('\\', '/');
   const url = `/uploads/${rel}`;
-  db.prepare('UPDATE users SET avatar_path = ? WHERE id = ?').run(url, req.user.id);
-  res.json({ ok: true, url });
+  const mime = req.file.mimetype || '';
+  const isVideo = mime.startsWith('video/');
+
+  if (isVideo) {
+    // Premium / VIP only — no static replacement, just animate.
+    const u = db.prepare('SELECT premium_until, is_vip FROM users WHERE id = ?').get(req.user.id);
+    if (!u || (!u.is_vip && u.premium_until <= now())) {
+      return res.status(403).json({ error: 'premium_required' });
+    }
+    db.prepare('UPDATE users SET video_avatar_path = ? WHERE id = ?').run(url, req.user.id);
+  } else {
+    // Static images and animated GIFs/WebPs both go in avatar_path.
+    db.prepare('UPDATE users SET avatar_path = ? WHERE id = ?').run(url, req.user.id);
+  }
+  res.json({ ok: true, url, kind: isVideo ? 'video' : 'image' });
+});
+
+// Drop the video avatar (free downgrade)
+r.delete('/avatar/video', (req, res) => {
+  db.prepare('UPDATE users SET video_avatar_path = NULL WHERE id = ?').run(req.user.id);
+  res.json({ ok: true });
 });
 
 export default r;

@@ -66,6 +66,9 @@ r.patch('/me', (req, res) => {
   if (typeof req.body?.phone === 'string') {
     fields.push('phone = ?'); args.push(req.body.phone.slice(0, 32) || null);
   }
+  if (typeof req.body?.tutorialDone === 'boolean') {
+    fields.push('tutorial_done = ?'); args.push(req.body.tutorialDone ? 1 : 0);
+  }
 
   if (fields.length === 0) return res.json({ user: publicUser(u, true) });
   args.push(u.id);

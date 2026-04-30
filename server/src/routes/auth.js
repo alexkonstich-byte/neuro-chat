@@ -176,6 +176,7 @@ export function publicUser(u, full = false) {
     displayName: u.display_name,
     bio: u.bio,
     avatar: u.avatar_path,
+    videoAvatar: u.video_avatar_path || null,
     isAdmin: !!u.is_admin,
     isVip:   !!u.is_vip,
     isBot:   u.username === 'neuro',
@@ -199,6 +200,7 @@ export function publicUser(u, full = false) {
     base.neurons = u.neurons;
     base.xpVisible = !!u.xp_visible;
     base.theme = u.theme || 'midnight';
+    base.tutorialDone = !!u.tutorial_done;
   }
   return base;
 }

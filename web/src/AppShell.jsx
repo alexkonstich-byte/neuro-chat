@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Chats from './pages/Chats.jsx';
 import { NeuroMark } from './components/ui.jsx';
+import Onboarding from './components/Onboarding.jsx';
+import { useAuth } from './store.js';
 
 /**
  * Layout shell:
@@ -12,6 +14,13 @@ import { NeuroMark } from './components/ui.jsx';
 export default function AppShell() {
   const loc = useLocation();
   const isRoot = loc.pathname === '/';
+  const user = useAuth((s) => s.user);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (user && user.tutorialDone === false) setShowOnboarding(true);
+    else setShowOnboarding(false);
+  }, [user?.tutorialDone, user?.id]);
 
   return (
     <div className="h-full flex bg-ink-950 overflow-hidden">
@@ -24,11 +33,11 @@ export default function AppShell() {
       </aside>
       <main
         className={`${isRoot ? 'hidden lg:block' : 'block'} flex-1 min-w-0 relative h-full overflow-y-auto`}
-        // Same — main pane scroll doesn't bubble to the chat list and vice-versa.
         style={{ overscrollBehavior: 'contain' }}
       >
         <Outlet />
       </main>
+      {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
     </div>
   );
 }

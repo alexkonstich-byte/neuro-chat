@@ -9,22 +9,22 @@ export default {
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       colors: {
-        // Midnight ladder — deep, calm, slightly blue.
+        // Midnight ladder — backed by CSS vars so themes can swap them at runtime.
         ink: {
-          950: '#08090F',
-          900: '#0B0D14',
-          800: '#0E1018',
-          700: '#13151F',
+          950: 'var(--bg)',
+          900: 'var(--bg-elev)',
+          800: 'var(--bg-elev-2)',
+          700: 'var(--bg-elev-3)',
           600: '#1B1E2B',
           500: '#262A3B',
           400: '#3A3F55',
           300: '#5C627A',
         },
-        // Brand: indigo → fuchsia → sky
+        // Brand: also CSS vars — the gradient classes below stay literal.
         brand: {
-          indigo: '#5B72FF',
-          fuchsia: '#C56BFF',
-          sky: '#65DEFF',
+          indigo:  'var(--brand-1)',
+          fuchsia: 'var(--brand-2)',
+          sky:     'var(--brand-3)',
         },
         premium: { amber: '#FFB13B', rose: '#FF5BA3' },
         ok:   '#34D399',
@@ -32,11 +32,11 @@ export default {
         bad:  '#FB7185',
       },
       backgroundImage: {
-        'hero-gradient':   'linear-gradient(135deg,#5B72FF 0%, #C56BFF 50%, #65DEFF 100%)',
-        'hero-soft':       'linear-gradient(135deg, rgba(91,114,255,0.18) 0%, rgba(197,107,255,0.12) 50%, rgba(101,222,255,0.18) 100%)',
+        'hero-gradient':   'linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 50%, var(--brand-3) 100%)',
+        'hero-soft':       'linear-gradient(135deg, color-mix(in srgb, var(--brand-1) 24%, transparent) 0%, color-mix(in srgb, var(--brand-2) 18%, transparent) 50%, color-mix(in srgb, var(--brand-3) 24%, transparent) 100%)',
         'premium-gradient':'linear-gradient(135deg,#FFB13B 0%, #FF5BA3 100%)',
-        'casino-gradient': 'linear-gradient(135deg,#FFB13B 0%, #FF5BA3 50%, #C56BFF 100%)',
-        'mesh-1':          'radial-gradient(120% 80% at 0% 0%, rgba(91,114,255,0.35) 0%, transparent 60%), radial-gradient(120% 80% at 100% 100%, rgba(197,107,255,0.30) 0%, transparent 60%)',
+        'casino-gradient': 'linear-gradient(135deg,#FFB13B 0%, #FF5BA3 50%, var(--brand-2) 100%)',
+        'mesh-1':          'radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--brand-1) 38%, transparent) 0%, transparent 60%), radial-gradient(120% 80% at 100% 100%, color-mix(in srgb, var(--brand-2) 32%, transparent) 0%, transparent 60%)',
       },
       boxShadow: {
         'glass':       '0 24px 60px -20px rgba(91,114,255,0.35), 0 8px 24px -12px rgba(197,107,255,0.20)',

@@ -226,6 +226,8 @@ ensureColumn('users', 'status_emoji', 'TEXT');     // TG-style emoji after nick 
 ensureColumn('users', 'status_text',  'TEXT');     // short status line on profile
 ensureColumn('users', 'theme',        'TEXT');     // settings: chosen theme key
 ensureColumn('users', 'is_vip',       'INTEGER DEFAULT 0');
+ensureColumn('users', 'video_avatar_path', 'TEXT');     // Premium/VIP — looping mp4/webm
+ensureColumn('users', 'tutorial_done', 'INTEGER DEFAULT 0');
 ensureColumn('chat_members', 'nickname', 'TEXT');
 
 // One-shot rebuild of `users` if it still has the legacy `phone NOT NULL` constraint
