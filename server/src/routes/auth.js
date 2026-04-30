@@ -177,22 +177,28 @@ export function publicUser(u, full = false) {
     bio: u.bio,
     avatar: u.avatar_path,
     isAdmin: !!u.is_admin,
-    isBot: u.username === 'neuro',
+    isVip:   !!u.is_vip,
+    isBot:   u.username === 'neuro',
     premiumUntil: u.premium_until,
     isPremium: u.premium_until > Date.now(),
-    activeBg: u.active_bg,
+    activeBg:     u.active_bg,
     activeBorder: u.active_border,
-    prefixText: u.prefix_text,
-    prefixColor: u.prefix_color,
-    nickColor: u.nick_color,
-    customEmoji: u.custom_emoji,
-    xp: u.xp_visible ? u.xp : null,
-    lastSeenAt: u.last_seen_at,
+    prefixText:   u.prefix_text,
+    prefixColor:  u.prefix_color,
+    nickColor:    u.nick_color,
+    customEmoji:  u.custom_emoji,
+    statusEmoji:  u.status_emoji,
+    statusText:   u.status_text,
+    birthday:     u.birthday,
+    xp:           u.xp_visible ? u.xp : null,
+    lastSeenAt:   u.last_seen_at,
   };
   if (full) {
+    base.phone = u.phone;
     base.xp = u.xp;
     base.neurons = u.neurons;
     base.xpVisible = !!u.xp_visible;
+    base.theme = u.theme || 'midnight';
   }
   return base;
 }

@@ -221,6 +221,12 @@ function ensureColumn(table, col, type) {
 }
 ensureColumn('users', 'password_hash', 'TEXT');
 ensureColumn('users', 'password_salt', 'TEXT');
+ensureColumn('users', 'birthday',     'TEXT');     // ISO yyyy-mm-dd
+ensureColumn('users', 'status_emoji', 'TEXT');     // TG-style emoji after nick (free)
+ensureColumn('users', 'status_text',  'TEXT');     // short status line on profile
+ensureColumn('users', 'theme',        'TEXT');     // settings: chosen theme key
+ensureColumn('users', 'is_vip',       'INTEGER DEFAULT 0');
+ensureColumn('chat_members', 'nickname', 'TEXT');
 
 // One-shot rebuild of `users` if it still has the legacy `phone NOT NULL` constraint
 // or `username` is nullable. (No third-party migration tool — SQLite doesn't support
@@ -301,6 +307,19 @@ CREATE TABLE IF NOT EXISTS login_codes (
   expires_at  INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_login_codes_user ON login_codes(user_id);
+
+CREATE TABLE IF NOT EXISTS feedback (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind        TEXT NOT NULL,        -- 'bug' | 'feature' | 'message'
+  text        TEXT NOT NULL,
+  status      TEXT NOT NULL DEFAULT 'open', -- open | in_progress | done | rejected
+  admin_note  TEXT,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_feedback_user   ON feedback(user_id, created_at DESC);
 `);
 
 // Seed system "Neuro" bot user. Used to send login alerts, jackpot announcements, etc.
@@ -351,15 +370,18 @@ if (itemCount === 0) {
   }
   // Avatar borders
   const borders = [
-    ['border_silver', 'Серебро', '#c0c0c0', 300],
-    ['border_gold',   'Золото',  '#fbbf24', 800],
-    ['border_neon',   'Неон',    '#22d3ee', 1200],
-    ['border_rainbow','Радуга',  'rainbow', 2000],
+    { code: 'border_silver',  name: 'Серебро',  payload: { color: '#c0c0c0' },                           price: 300  },
+    { code: 'border_gold',    name: 'Золото',   payload: { color: '#fbbf24' },                           price: 800  },
+    { code: 'border_neon',    name: 'Неон',     payload: { color: '#22d3ee' },                           price: 1200 },
+    { code: 'border_rainbow', name: 'Радуга',   payload: { color: 'rainbow' },                           price: 2000 },
+    { code: 'border_pulse',   name: 'Пульс',    payload: { animated: 'pulse',   color: '#ff5ba3' },      price: 1500 },
+    { code: 'border_aurora',  name: 'Аврора',   payload: { animated: 'aurora' },                          price: 1800 },
+    { code: 'border_ember',   name: 'Угольки',  payload: { animated: 'ember',   color: '#ff8a2b' },      price: 2200 },
   ];
   for (let i = 0; i < borders.length; i++) {
-    const [code, name, color, price] = borders[i];
-    ins.run(code, 'border', name, 'Обводка для аватара', price, 0,
-      JSON.stringify({ color }), 0, 0, 100 + i);
+    const b = borders[i];
+    ins.run(b.code, 'border', b.name, 'Обводка для аватара', b.price, 0,
+      JSON.stringify(b.payload), 0, 0, 100 + i);
   }
   // Multipliers (consumables → granted via inventory with expires_at)
   const mults = [

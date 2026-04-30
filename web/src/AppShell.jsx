@@ -14,13 +14,19 @@ export default function AppShell() {
   const isRoot = loc.pathname === '/';
 
   return (
-    <div className="h-full flex bg-ink-950">
+    <div className="h-full flex bg-ink-950 overflow-hidden">
       <aside
         className={`${isRoot ? 'flex' : 'hidden'} lg:flex flex-col w-full lg:w-[380px] lg:max-w-[380px] lg:border-r lg:border-white/5 lg:shrink-0`}
+        // overscroll-contain: scroll inside this aside doesn't bubble to <main>
+        style={{ overscrollBehavior: 'contain' }}
       >
         <Chats />
       </aside>
-      <main className={`${isRoot ? 'hidden lg:block' : 'block'} flex-1 min-w-0 relative h-full`}>
+      <main
+        className={`${isRoot ? 'hidden lg:block' : 'block'} flex-1 min-w-0 relative h-full overflow-y-auto`}
+        // Same — main pane scroll doesn't bubble to the chat list and vice-versa.
+        style={{ overscrollBehavior: 'contain' }}
+      >
         <Outlet />
       </main>
     </div>

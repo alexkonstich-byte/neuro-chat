@@ -44,6 +44,8 @@ export const api = {
   chat: (id) => request(`/api/chats/${id}`),
   history: (id, before) => request(`/api/chats/${id}/messages${before ? `?before=${before}` : ''}`),
   read: (id) => request(`/api/chats/${id}/read`, { method: 'POST' }),
+  muteChat: (id, minutes) => request(`/api/chats/${id}/mute`, { method: 'POST', body: JSON.stringify({ minutes }) }),
+  setChatNickname: (id, nickname) => request(`/api/chats/${id}/nickname`, { method: 'PATCH', body: JSON.stringify({ nickname }) }),
 
   // shop
   shopItems: () => request('/api/shop/items'),
@@ -72,7 +74,19 @@ export const api = {
   adminDelBannedWord: (id) => request(`/api/admin/banned-words/${id}`, { method: 'DELETE' }),
   adminExclusiveItems: () => request('/api/admin/exclusive-items'),
   adminAddExclusive: (body) => request('/api/admin/exclusive-items', { method: 'POST', body: JSON.stringify(body) }),
+  adminPatchExclusive: (id, body) => request(`/api/admin/exclusive-items/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   adminGrantItem: (userId, code) => request('/api/admin/grant-item', { method: 'POST', body: JSON.stringify({ userId, code }) }),
+
+  // feedback (user)
+  sendFeedback: (kind, text) => request('/api/feedback', { method: 'POST', body: JSON.stringify({ kind, text }) }),
+  myFeedback: () => request('/api/feedback/mine'),
+
+  // feedback (admin)
+  adminFeedback: (status = '') => request(`/api/admin/feedback${status ? `?status=${status}` : ''}`),
+  adminPatchFeedback: (id, body) => request(`/api/admin/feedback/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+
+  // VIP
+  adminVip: (id, vip) => request(`/api/admin/users/${id}/vip`, { method: 'POST', body: JSON.stringify({ vip }) }),
 
   // uploads
   uploadFile: (file, kind = 'file') => {

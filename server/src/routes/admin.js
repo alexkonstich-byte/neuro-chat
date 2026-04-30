@@ -22,7 +22,7 @@ r.get('/users', (req, res) => {
   const q = `%${String(req.query?.q || '').toLowerCase()}%`;
   const rows = db.prepare(
     `SELECT id, phone, username, display_name, xp, neurons, premium_until,
-            is_admin, is_banned, shadow_banned, created_at, last_seen_at
+            is_admin, is_vip, is_banned, shadow_banned, created_at, last_seen_at
      FROM users
      WHERE LOWER(username) LIKE ? OR LOWER(display_name) LIKE ? OR phone LIKE ?
      ORDER BY id DESC LIMIT 100`
@@ -110,11 +110,21 @@ r.get('/exclusive-items', (req, res) => {
 });
 
 r.post('/exclusive-items', (req, res) => {
-  const { code, kind, name, description, payload } = req.body || {};
+  const { code, kind, name, description, payload, price_xp } = req.body || {};
   if (!code || !kind || !name) return res.status(400).json({ error: 'missing_fields' });
   db.prepare(`INSERT INTO shop_items(code, kind, name, description, price_xp, price_neurons, payload, is_exclusive, premium_only, sort_order, active)
-              VALUES(?, ?, ?, ?, 0, 0, ?, 1, 0, 999, 1)`)
-    .run(code, kind, name, description || '', JSON.stringify(payload || {}));
+              VALUES(?, ?, ?, ?, ?, 0, ?, 1, 0, 999, 1)`)
+    .run(code, kind, name, description || '', Number(price_xp) || 0, JSON.stringify(payload || {}));
+  res.json({ ok: true });
+});
+
+r.patch('/exclusive-items/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const { name, description, price_xp, payload } = req.body || {};
+  const item = db.prepare('SELECT * FROM shop_items WHERE id = ? AND is_exclusive = 1').get(id);
+  if (!item) return res.status(404).json({ error: 'not_found' });
+  db.prepare(`UPDATE shop_items SET name = ?, description = ?, price_xp = ?, payload = ? WHERE id = ?`)
+    .run(name ?? item.name, description ?? item.description, Number(price_xp) ?? item.price_xp, payload !== undefined ? JSON.stringify(payload) : item.payload, id);
   res.json({ ok: true });
 });
 
@@ -126,6 +136,42 @@ r.post('/grant-item', (req, res) => {
   const t = now();
   db.prepare(`INSERT OR IGNORE INTO inventory(user_id, item_code, source, acquired_at, expires_at)
               VALUES(?, ?, 'admin', ?, 0)`).run(userId, code, t);
+  res.json({ ok: true });
+});
+
+// ---- Feedback inbox ----
+r.get('/feedback', (req, res) => {
+  const status = String(req.query?.status || '');
+  const where = status ? 'WHERE f.status = ?' : '';
+  const args  = status ? [status] : [];
+  const rows = db.prepare(
+    `SELECT f.*, u.username, u.display_name FROM feedback f
+     JOIN users u ON u.id = f.user_id
+     ${where}
+     ORDER BY f.id DESC LIMIT 200`
+  ).all(...args);
+  res.json({ feedback: rows });
+});
+
+r.patch('/feedback/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const status = String(req.body?.status || '');
+  const note = req.body?.adminNote != null ? String(req.body.adminNote).slice(0, 1000) : null;
+  if (!['open','in_progress','done','rejected'].includes(status)) return res.status(400).json({ error: 'bad_status' });
+  const t = now();
+  if (note !== null) {
+    db.prepare(`UPDATE feedback SET status = ?, admin_note = ?, updated_at = ? WHERE id = ?`).run(status, note, t, id);
+  } else {
+    db.prepare(`UPDATE feedback SET status = ?, updated_at = ? WHERE id = ?`).run(status, t, id);
+  }
+  res.json({ ok: true });
+});
+
+// ---- VIP toggle ----
+r.post('/users/:id/vip', (req, res) => {
+  const userId = Number(req.params.id);
+  const v = req.body?.vip ? 1 : 0;
+  db.prepare('UPDATE users SET is_vip = ? WHERE id = ?').run(v, userId);
   res.json({ ok: true });
 });
 

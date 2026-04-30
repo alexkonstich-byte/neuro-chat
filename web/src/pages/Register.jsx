@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, auth } from '../api.js';
 import { useAuth } from '../store.js';
-import { NeuroMark, GradientHalo, Button, Field, Input, Card } from '../components/ui.jsx';
+import { NeuroMark, GradientHalo, Button, Field, Input, PasswordInput, Card } from '../components/ui.jsx';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -53,11 +53,11 @@ export default function Register() {
             />
           </Field>
           <Field label="Пароль">
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+            <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password" placeholder="мин. 6 символов" />
           </Field>
           <Field label="Повторите пароль">
-            <Input type="password" value={password2} onChange={(e) => setPassword2(e.target.value)}
+            <PasswordInput value={password2} onChange={(e) => setPassword2(e.target.value)}
               autoComplete="new-password" />
           </Field>
 

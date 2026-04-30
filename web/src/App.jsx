@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth, useChats, useMessages } from './store.js';
+import { useAuth, useChats, useMessages, useToasts, toast } from './store.js';
 import { getSocket, destroySocket } from './socket.js';
+import { ToastViewport } from './components/ui.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Info from './pages/Info.jsx';
@@ -10,6 +11,7 @@ import Profile from './pages/Profile.jsx';
 import Shop from './pages/Shop.jsx';
 import Casino from './pages/Casino.jsx';
 import Admin from './pages/Admin.jsx';
+import Settings from './pages/Settings.jsx';
 import AppShell, { DesktopEmpty } from './AppShell.jsx';
 
 function Guarded({ children }) {
@@ -83,10 +85,13 @@ function SocketBridge() {
 
 export default function App() {
   const load = useAuth((s) => s.load);
+  const toasts = useToasts((s) => s.list);
+  const removeToast = useToasts((s) => s.remove);
   useEffect(() => { load(); }, [load]);
   return (
     <>
       <SocketBridge />
+      <ToastViewport toasts={toasts} onDismiss={removeToast} />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -99,6 +104,8 @@ export default function App() {
           <Route path="/shop" element={<Shop />} />
           <Route path="/casino" element={<Casino />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/users/:id" element={<Admin />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

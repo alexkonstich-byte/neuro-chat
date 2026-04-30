@@ -1,17 +1,18 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { NeuroMark, GradientHalo, Button, Tag, Card } from '../components/ui.jsx';
 
 const FEATURES = [
-  { icon: '💬', title: 'Мгновенные сообщения', desc: 'Real-time, печатает, реакции, ответы, редактирование, удаление.' },
-  { icon: '📞', title: 'Аудио и видеозвонки', desc: 'P2P через WebRTC прямо в браузере.' },
-  { icon: '🎙', title: 'Голосовые и кружки', desc: 'Запись с микрофона и фронт-камеры.' },
-  { icon: '🛒', title: 'Кастомизация за XP', desc: '10 анимированных фонов, обводки, префиксы, множители, нейроны.' },
-  { icon: '🎰', title: 'Казино', desc: 'Слоты с настоящим лидербордом. Джекпот 7-7-7 = Premium 3 мес.' },
-  { icon: '🔥', title: 'Огоньки дружбы', desc: 'Общайся каждый день — счётчик растёт, прервёшь — сгорит.' },
-  { icon: '✦', title: 'Neuro Premium', desc: 'Цвет ника, цвет префикса, кастомный эмодзи после имени.' },
-  { icon: '🛡', title: 'Антиспам и админка', desc: 'Глобальные/персональные банвордс, shadow-баны.' },
-  { icon: '📲', title: 'PWA', desc: 'Устанавливается как приложение. Native — скоро.' },
+  { icon: '💬', title: 'Real-time чаты',         desc: 'Реакции, ответы, редактирование, удаление, печатает, presence, прочитано.' },
+  { icon: '📞', title: 'Аудио и видеозвонки',    desc: 'P2P через WebRTC. Личные и групповые (mesh) — прямо из браузера.' },
+  { icon: '🎙', title: 'Голос и кружки',         desc: 'Push-to-hold: жми и держи. Кружки — закруглённые квадраты с превью себя.' },
+  { icon: '🛒', title: 'Магазин за XP',          desc: 'Анимированные фоны, обводки, префиксы, множители опыта, нейроны.' },
+  { icon: '🎰', title: 'Казино со слотами',      desc: 'Лидерборд, джекпот 7-7-7 = Neuro Premium на 3 месяца.' },
+  { icon: '🔥', title: 'Огоньки дружбы',         desc: 'Общайся каждый день — счётчик растёт, прервёшь — обнулится.' },
+  { icon: '✦', title: 'Neuro Premium',          desc: 'Цвет ника, цвет префикса, кастомный эмодзи, эксклюзивные косметики.' },
+  { icon: '👑', title: 'VIP',                    desc: 'Анимированные фоны и обводки бесплатно, видео-аватарка, значок 👑.' },
+  { icon: '🛡', title: 'Антиспам и админка',     desc: 'Глобальные/персональные банвордс, shadow-баны, инбокс заявок.' },
+  { icon: '📲', title: 'PWA',                    desc: 'Устанавливается как приложение на телефон или ПК. Native — скоро.' },
 ];
 
 const STACK = [
@@ -21,46 +22,122 @@ const STACK = [
   ['Deploy',   'Ubuntu · PM2 · Nginx · Let’s Encrypt'],
 ];
 
+const CHANGELOG = [
+  {
+    version: 'v0.4',
+    date: '2026-04-26',
+    title: 'Большой UX-ремонт',
+    items: [
+      'Push-to-hold голосовые и кружки — жми и держи, отпустишь = отправлено',
+      'Кружок теперь закруглённый квадрат, с превью камеры во время записи',
+      'Кастомное контекстное меню по сообщениям и пользователям (правая кнопка / долгое нажатие)',
+      'Toast-уведомления о покупках, начислениях, премиуме',
+      'Магазин: рич-превью предметов с твоим аватаром и ником, тап → сравнение',
+      'Префикс из инвентаря — применяется сразу, без открытия профиля',
+      'Поля в профиле: дата рождения, телефон, статус (эмодзи + текст)',
+      'Кнопка показать пароль · код-вход выровнен слева',
+      'Раздел «Настройки» отделён от профиля — темы, сессии, безопасность',
+      'Сообщения в чате Neuro теперь нормальные, плюс кнопки «Баг» / «Идея» / «Админу»',
+      'VIP-флаг в админке + новые анимированные обводки в магазине',
+      'Десктоп: список чатов больше не скроллится при работе с магазином',
+    ],
+  },
+  {
+    version: 'v0.3',
+    date: '2026-04-25',
+    title: 'Десктоп-режим и фикс деплоя',
+    items: [
+      '2-колоночный лейаут на ≥1024px (как Telegram Desktop)',
+      'bootstrap.sh: HTTP-only nginx → certbot → HTTPS — починка SSL chicken-and-egg',
+      'update.sh с режимом GIT=1 — одной командой обновляется с GitHub',
+      'PM2 теперь корректно перечитывает конфиг при reload',
+    ],
+  },
+  {
+    version: 'v0.2',
+    date: '2026-04-24',
+    title: 'Группы и групповые звонки',
+    items: [
+      'Создание групп, добавление/удаление участников',
+      'Групповые звонки в формате mesh-WebRTC (до ~6 человек без TURN)',
+      'Свайп-back на телефонах и pull-to-refresh для списка чатов',
+      'Дизайн-система: Bricolage Grotesque + Plus Jakarta Sans + indigo→fuchsia→sky',
+    ],
+  },
+  {
+    version: 'v0.1',
+    date: '2026-04-23',
+    title: 'Первый запуск',
+    items: [
+      'Username/password + код-вход с другого устройства',
+      'Чаты «Избранное» и «Neuro» создаются автоматически',
+      'XP за сообщение, антифлуд, множители',
+      'Магазин, инвентарь, возврат за 5 минут',
+      'Казино со слотами и лидербордом',
+      'Огоньки дружбы 🔥 в личных чатах',
+    ],
+  },
+];
+
 export default function Info() {
+  const [scrolled, setScrolled] = useState(false);
+  const heroRef = useRef(null);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
     <div className="min-h-full bg-ink-950 text-white">
-      {/* Top nav */}
-      <div className="relative z-10 px-6 py-5 flex items-center justify-between">
-        <Link to="/info" className="flex items-center gap-2.5">
-          <NeuroMark size={28} />
-          <span className="font-display text-xl">Neuro</span>
-        </Link>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/login">Войти</Link>
-          </Button>
-          <Button size="sm" asChild>
-            <Link to="/register">Создать</Link>
-          </Button>
+      {/* Sticky nav with logo that drifts left of "Neuro" */}
+      <div className={`sticky top-0 z-30 transition-all ${scrolled ? 'surface-strong border-b border-white/5' : ''}`}>
+        <div className="px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
+          <Link to="/info" className="flex items-center group" aria-label="Neuro home">
+            <span className={`transition-transform duration-500 ease-out ${scrolled ? '-translate-x-1' : 'translate-x-0'}`}>
+              <NeuroMark size={30} />
+            </span>
+            <span className={`ml-2 font-display font-bold text-xl tracking-tight transition-all duration-500
+              ${scrolled ? 'opacity-100 translate-x-0' : 'opacity-100 translate-x-0'}`}>
+              Neuro
+            </span>
+          </Link>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" asChild><Link to="/login">Войти</Link></Button>
+            <Button size="sm" asChild><Link to="/register">Создать</Link></Button>
+          </div>
         </div>
       </div>
 
       {/* HERO */}
-      <section className="relative px-6 pt-10 pb-24 overflow-hidden">
+      <section ref={heroRef} className="relative px-6 pt-12 pb-28 overflow-hidden">
         <GradientHalo />
         <div className="relative max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 mb-6">
-            <Tag tone="brand">
-              <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse-soft" />
-              <span>open beta · web</span>
-            </Tag>
+          <Tag tone="brand" className="mb-6 inline-flex">
+            <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse-soft" />
+            open beta · web
+          </Tag>
+
+          {/* Big logo to the LEFT of "Neuro" — sits inline on desktop */}
+          <div className="flex items-center justify-center gap-4 mb-3">
+            <div className="hidden sm:block animate-pop sparkle">
+              <NeuroMark size={88} glow />
+            </div>
+            <h1 className="font-display font-extrabold text-balance text-7xl sm:text-8xl leading-[0.92] tracking-[-0.04em] text-hero">
+              Neuro
+            </h1>
           </div>
-          <h1 className="font-display font-extrabold text-balance text-7xl sm:text-8xl leading-[0.92] tracking-[-0.04em] text-hero">
-            Мессенджер<br/>с экономикой XP.
-          </h1>
-          <p className="mt-6 text-lg sm:text-xl text-white/65 max-w-xl mx-auto text-pretty">
-            Привычная скорость Телеграма, плюс магазин кастомизации, казино со слотами
+          <h2 className="font-display text-4xl sm:text-6xl font-bold tracking-tight text-hero leading-tight mb-5">
+            Мессенджер<br/>с экономикой XP
+          </h2>
+          <p className="text-lg sm:text-xl text-white/65 max-w-xl mx-auto text-pretty">
+            Скорость Телеграма, плюс магазин кастомизации, казино со слотами
             и кастомный Neuro Premium — за свои собственные баллы.
           </p>
           <div className="mt-9 flex items-center justify-center gap-3 flex-wrap">
-            <Button size="lg" asChild>
-              <Link to="/register">Начать →</Link>
-            </Button>
+            <Button size="lg" asChild><Link to="/register">Начать →</Link></Button>
             <Button variant="ghost" size="lg" asChild>
               <a href="https://github.com/alexkonstich-byte/neuro-chat" target="_blank" rel="noreferrer">⭐ Open Source</a>
             </Button>
@@ -74,7 +151,7 @@ export default function Info() {
         <div className="max-w-5xl mx-auto">
           <div className="flex items-end justify-between mb-8">
             <h2 className="font-display font-bold text-3xl sm:text-5xl tracking-tight">Возможности</h2>
-            <div className="text-xs text-white/45 font-mono uppercase tracking-widest hidden sm:block">v0.2 · 2026</div>
+            <div className="text-xs text-white/45 font-mono uppercase tracking-widest hidden sm:block">v0.4 · 2026</div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {FEATURES.map((f, i) => (
@@ -109,6 +186,45 @@ export default function Info() {
         </div>
       </section>
 
+      {/* CHANGELOG */}
+      <section className="px-6 pb-24">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-end justify-between mb-8">
+            <h2 className="font-display font-bold text-3xl sm:text-5xl tracking-tight">Что нового</h2>
+            <Tag>changelog</Tag>
+          </div>
+          <div className="relative pl-4">
+            {/* timeline rail */}
+            <div className="absolute left-0 top-2 bottom-2 w-px bg-gradient-to-b from-brand-indigo/60 via-brand-fuchsia/40 to-transparent" />
+            <div className="space-y-6">
+              {CHANGELOG.map((rel, i) => (
+                <div key={rel.version} className="relative">
+                  <div className={`absolute -left-[7px] top-2.5 w-3 h-3 rounded-full ${i === 0 ? 'bg-hero-gradient shadow-glow-brand' : 'bg-white/30'}`} />
+                  <Card className="ml-4">
+                    <div className="flex items-baseline gap-2 flex-wrap mb-1">
+                      <span className="font-display font-bold text-2xl">{rel.version}</span>
+                      <Tag tone={i === 0 ? 'brand' : 'default'}>{rel.date}</Tag>
+                      <span className="font-display text-lg text-white/85">— {rel.title}</span>
+                    </div>
+                    <ul className="mt-3 space-y-1.5 text-sm text-white/75 list-none">
+                      {rel.items.map((it, k) => (
+                        <li key={k} className="flex gap-2">
+                          <span className="text-brand-sky shrink-0">›</span>
+                          <span>{it}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mt-6 text-center text-xs text-white/45">
+            Полная история коммитов — на <a className="hover:text-white underline" href="https://github.com/alexkonstich-byte/neuro-chat" target="_blank" rel="noreferrer">GitHub</a>.
+          </div>
+        </div>
+      </section>
+
       {/* AUTHOR */}
       <section className="px-6 pb-24">
         <div className="max-w-3xl mx-auto">
@@ -122,7 +238,7 @@ export default function Info() {
               <div className="font-display font-bold text-3xl mt-1">Alex Serguntsov</div>
               <p className="mt-2 text-white/65">
                 Делаю Neuro как личный мессенджер: open-source, свой сервер, свои правила.
-                Если нашёл баг — пиши в чат «Neuro» внутри приложения.
+                Если нашёл баг или хочешь предложить фичу — пиши прямо в чат «Neuro» внутри приложения.
               </p>
               <div className="mt-4 flex items-center justify-center sm:justify-start gap-2">
                 <Button asChild size="sm"><Link to="/login">Войти</Link></Button>

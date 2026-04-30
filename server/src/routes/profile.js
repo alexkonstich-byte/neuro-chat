@@ -50,6 +50,22 @@ r.patch('/me', (req, res) => {
     if (!isPremium && req.body.customEmoji) return res.status(403).json({ error: 'premium_required' });
     fields.push('custom_emoji = ?'); args.push(req.body.customEmoji.slice(0, 8) || null);
   }
+  if (typeof req.body?.statusEmoji === 'string') {
+    fields.push('status_emoji = ?'); args.push(req.body.statusEmoji.slice(0, 8) || null);
+  }
+  if (typeof req.body?.statusText === 'string') {
+    fields.push('status_text = ?'); args.push(req.body.statusText.slice(0, 80) || null);
+  }
+  if (typeof req.body?.birthday === 'string') {
+    const v = req.body.birthday.match(/^\d{4}-\d{2}-\d{2}$/) ? req.body.birthday : null;
+    fields.push('birthday = ?'); args.push(v);
+  }
+  if (typeof req.body?.theme === 'string') {
+    fields.push('theme = ?'); args.push(req.body.theme.slice(0, 24) || 'midnight');
+  }
+  if (typeof req.body?.phone === 'string') {
+    fields.push('phone = ?'); args.push(req.body.phone.slice(0, 32) || null);
+  }
 
   if (fields.length === 0) return res.json({ user: publicUser(u, true) });
   args.push(u.id);

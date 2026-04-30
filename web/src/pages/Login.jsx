@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, auth } from '../api.js';
 import { useAuth } from '../store.js';
-import { NeuroMark, GradientHalo, Button, Field, Input, Card } from '../components/ui.jsx';
+import { NeuroMark, GradientHalo, Button, Field, Input, PasswordInput, Card } from '../components/ui.jsx';
 
 export default function Login() {
   const [mode, setMode] = useState('password');
@@ -50,7 +50,7 @@ export default function Login() {
 
           {mode === 'password' ? (
             <Field label="Пароль">
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+              <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password" placeholder="••••••••" />
             </Field>
           ) : (
@@ -58,8 +58,9 @@ export default function Login() {
                    hint="Получи код в активной сессии: Профиль → «Войти на другом устройстве».">
               <Input
                 value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
-                inputMode="numeric" maxLength={8} placeholder="••••••••"
-                className="text-center text-2xl tracking-[0.5em] font-mono h-14" />
+                onFocus={(e) => { e.target.setSelectionRange(0, 0); }}
+                inputMode="numeric" maxLength={8} placeholder="01234567"
+                className="text-left text-xl tracking-[0.35em] font-mono h-14 placeholder:text-white/20" />
             </Field>
           )}
 

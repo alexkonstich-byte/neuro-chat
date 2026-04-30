@@ -1,23 +1,71 @@
 import React, { forwardRef, useEffect, useRef } from 'react';
 
-/* ---------------- Brand mark ---------------- */
-export function NeuroMark({ size = 28, glow = false }) {
+/* ---------------- Brand mark v2 (organic, with orbital spark) ---------------- */
+export function NeuroMark({ size = 28, glow = false, animated = true }) {
   const px = size + 'px';
+  const id = `nm-${Math.random().toString(36).slice(2, 8)}`;
   return (
     <svg width={px} height={px} viewBox="0 0 64 64" fill="none" aria-hidden="true"
-         className={glow ? 'drop-shadow-[0_0_18px_rgba(197,107,255,0.55)]' : ''}>
+         className={glow ? 'drop-shadow-[0_0_22px_rgba(197,107,255,0.6)]' : ''}>
       <defs>
-        <linearGradient id="nm-g" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0" stopColor="#5B72FF" />
+        <radialGradient id={`${id}-core`} cx="35%" cy="32%" r="75%">
+          <stop offset="0%"  stopColor="#7AA2FF" />
+          <stop offset="55%" stopColor="#C56BFF" />
+          <stop offset="100%" stopColor="#1B1E2B" />
+        </radialGradient>
+        <linearGradient id={`${id}-stroke`} x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0"   stopColor="#5B72FF" />
           <stop offset="0.5" stopColor="#C56BFF" />
-          <stop offset="1" stopColor="#65DEFF" />
+          <stop offset="1"   stopColor="#65DEFF" />
+        </linearGradient>
+        <linearGradient id={`${id}-n`} x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0" stopColor="#fff" />
+          <stop offset="1" stopColor="#E5E9FF" />
         </linearGradient>
       </defs>
-      <path d="M32 2 L58 17 L58 47 L32 62 L6 47 L6 17 Z" fill="url(#nm-g)" />
-      <path d="M22 44 L22 22 L26 22 L40 38 L40 22 L44 22 L44 44 L40 44 L26 28 L26 44 Z"
-            fill="white" stroke="white" strokeWidth="1.2" strokeLinejoin="round" />
+      {/* Core blob — organic squircle */}
+      <path d="M32 4 Q56 4 60 20 Q64 36 52 50 Q40 62 26 60 Q8 56 4 38 Q0 14 32 4 Z"
+            fill={`url(#${id}-core)`} stroke={`url(#${id}-stroke)`} strokeWidth="2" />
+      {/* The N */}
+      <path d="M22 44 V20 H27 L40 38 V20 H45 V44 H40 L27 26 V44 Z"
+            fill={`url(#${id}-n)`} />
+      {/* Orbital spark */}
+      <g style={{ transformOrigin: '32px 32px' }} className={animated ? 'animate-[spinSlow_8s_linear_infinite]' : ''}>
+        <circle cx="56" cy="14" r="2.2" fill="#65DEFF" />
+        <circle cx="56" cy="14" r="4" fill="#65DEFF" opacity="0.3" />
+      </g>
     </svg>
   );
+}
+
+/* ---------------- Toast viewport (mounted once in App.jsx) ---------------- */
+export function ToastViewport({ toasts, onDismiss }) {
+  return (
+    <div className="fixed top-3 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center gap-2 pointer-events-none safe-top">
+      {toasts.map((t) => (
+        <div key={t.id} onClick={() => onDismiss(t.id)}
+          className={`pointer-events-auto press min-w-[240px] max-w-sm flex items-center gap-3 px-4 py-2.5 rounded-2xl shadow-2xl backdrop-blur-xl border animate-slide-up
+            ${toneClasses(t.tone)}`}>
+          <div className="text-xl shrink-0">{t.icon || iconFor(t.tone)}</div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-sm truncate">{t.title}</div>
+            {t.hint && <div className="text-xs opacity-80 truncate">{t.hint}</div>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+function toneClasses(tone) {
+  return ({
+    ok:      'bg-ok/15 border-ok/30 text-white',
+    bad:     'bg-bad/15 border-bad/30 text-white',
+    brand:   'bg-brand-indigo/15 border-brand-indigo/30 text-white',
+    premium: 'bg-premium-rose/15 border-premium-amber/40 text-white',
+  })[tone] || 'bg-white/[0.06] border-white/10 text-white';
+}
+function iconFor(tone) {
+  return ({ ok: '✓', bad: '⚠', brand: '✦', premium: '★' })[tone] || '·';
 }
 
 /* ---------------- Mesh halo background ---------------- */
@@ -101,6 +149,40 @@ export function Input({ className = '', ...rest }) {
       {...rest}
       className={`w-full h-12 rounded-xl bg-ink-800 border border-white/[0.06] px-4 outline-none transition focus:border-brand-indigo/60 focus:ring-2 focus:ring-brand-indigo/30 placeholder:text-white/30 ${className}`}
     />
+  );
+}
+
+/* ---------------- Password input (with show/hide toggle) ---------------- */
+export function PasswordInput({ className = '', ...rest }) {
+  const [show, setShow] = React.useState(false);
+  return (
+    <div className="relative">
+      <input
+        {...rest}
+        type={show ? 'text' : 'password'}
+        className={`w-full h-12 rounded-xl bg-ink-800 border border-white/[0.06] pl-4 pr-12 outline-none transition focus:border-brand-indigo/60 focus:ring-2 focus:ring-brand-indigo/30 placeholder:text-white/30 ${className}`}
+      />
+      <button type="button" tabIndex={-1}
+        onClick={() => setShow(!show)}
+        className="press absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 grid place-items-center rounded-lg text-white/55 hover:text-white hover:bg-white/[0.06]">
+        {show
+          ? (
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M3 3 L17 17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+              <path d="M5.6 7.5 C3.5 9 2 10.5 2 10.5 C2 10.5 4.5 16 10 16 C11.4 16 12.6 15.7 13.6 15.2"
+                    stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+              <path d="M14.5 13.4 C16.7 11.9 18 10.5 18 10.5 C18 10.5 15.5 5 10 5 C9.4 5 8.8 5.07 8.2 5.2"
+                    stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M2 10.5 C2 10.5 4.5 5 10 5 C15.5 5 18 10.5 18 10.5 C18 10.5 15.5 16 10 16 C4.5 16 2 10.5 2 10.5 Z"
+                    stroke="currentColor" strokeWidth="1.6"/>
+              <circle cx="10" cy="10.5" r="3" stroke="currentColor" strokeWidth="1.6"/>
+            </svg>
+          )}
+      </button>
+    </div>
   );
 }
 

@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api.js';
-import { useAuth } from '../store.js';
+import { useAuth, toast } from '../store.js';
 import { Avatar, NameLine, ProfileBackground } from '../components/UserChip.jsx';
 import { BackButton, IconButton, Button, Card, Tag, Field, Input, Section, PageHeader } from '../components/ui.jsx';
+import { resizeImageFile } from '../utils/image.js';
 
 export default function Profile() {
   const { username } = useParams();
@@ -29,6 +30,8 @@ export default function Profile() {
       displayName: user.displayName || '', bio: user.bio || '', username: user.username || '',
       xpVisible: user.xpVisible ?? true, prefixText: user.prefixText || '',
       prefixColor: user.prefixColor || '', nickColor: user.nickColor || '', customEmoji: user.customEmoji || '',
+      statusEmoji: user.statusEmoji || '', statusText: user.statusText || '',
+      birthday: user.birthday || '', phone: user.phone || '',
     });
     setEditing(true);
   };
@@ -44,9 +47,15 @@ export default function Profile() {
 
   const upAvatar = async (e) => {
     const f = e.target.files?.[0]; if (!f) return;
-    await api.uploadAvatar(f);
-    const fresh = (await api.me()).user;
-    setUser(fresh); setLocal(fresh);
+    try {
+      const resized = await resizeImageFile(f, { maxSide: 512, minSide: 64, quality: 0.9, type: 'image/jpeg' });
+      await api.uploadAvatar(resized);
+      const fresh = (await api.me()).user;
+      setUser(fresh); setLocal(fresh);
+      toast.ok('Аватар обновлён');
+    } catch (err) {
+      toast.bad('Не удалось загрузить аватар', err.message);
+    }
   };
 
   const startDm = async () => {
@@ -76,6 +85,12 @@ export default function Profile() {
           <div className="mt-4 font-display text-3xl"><NameLine user={user} /></div>
           {user.username && <div className="text-sm text-white/75 font-mono mt-0.5">@{user.username}</div>}
           {user.bio && <div className="mt-3 text-sm max-w-sm text-white/85">{user.bio}</div>}
+          {(user.birthday || user.phone) && (
+            <div className="mt-2 text-xs text-white/60 font-mono flex gap-3 flex-wrap justify-center">
+              {user.birthday && <span>🎂 {formatBday(user.birthday)}</span>}
+              {user.phone && isMe && <span>📞 {user.phone}</span>}
+            </div>
+          )}
           <div className="mt-4 flex items-center gap-2 flex-wrap justify-center">
             {user.isPremium && <Tag tone="premium">✦ Neuro Premium</Tag>}
             {user.isAdmin && <Tag tone="brand">админ</Tag>}
@@ -87,7 +102,16 @@ export default function Profile() {
 
       <div className="px-4 -mt-6 relative z-10">
         {!isMe && (
-          <Button onClick={startDm} className="w-full h-12 mb-3">Написать сообщение</Button>
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <Button onClick={startDm} className="h-12">💬 Написать</Button>
+            <Button variant="ghost" onClick={() => location.assign('/')} className="h-12">К чатам</Button>
+          </div>
+        )}
+        {(user.statusText || user.statusEmoji) && (
+          <Card className="!p-3 mb-3 flex items-center gap-2.5">
+            {user.statusEmoji && <div className="text-xl">{user.statusEmoji}</div>}
+            <div className="text-sm text-white/80">{user.statusText}</div>
+          </Card>
         )}
       </div>
 
@@ -114,6 +138,22 @@ export default function Profile() {
               <Field label="О себе">
                 <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })}
                   rows={2} className="w-full bg-ink-800 rounded-xl border border-white/[0.06] px-3 py-2 outline-none focus:border-brand-indigo/60" />
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Дата рождения">
+                  <Input type="date" value={form.birthday || ''} onChange={(e) => setForm({ ...form, birthday: e.target.value })} />
+                </Field>
+                <Field label="Телефон">
+                  <Input type="tel" value={form.phone || ''} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+7..." />
+                </Field>
+              </div>
+              <Field label="Статус (эмодзи + текст)" hint="Появится у твоего ника и в шапке профиля.">
+                <div className="flex gap-2">
+                  <Input value={form.statusEmoji || ''} onChange={(e) => setForm({ ...form, statusEmoji: e.target.value.slice(0, 4) })}
+                    maxLength={4} className="w-16 text-center text-xl" placeholder="🎵" />
+                  <Input value={form.statusText || ''} onChange={(e) => setForm({ ...form, statusText: e.target.value.slice(0, 80) })}
+                    maxLength={80} className="flex-1" placeholder="Слушаю музыку" />
+                </div>
               </Field>
               <Field label="Префикс перед ником" hint="Нужен слот префикса из магазина.">
                 <Input value={form.prefixText} onChange={(e) => setForm({ ...form, prefixText: e.target.value })} maxLength={12} />
@@ -152,6 +192,14 @@ export default function Profile() {
       )}
     </div>
   );
+}
+
+function formatBday(iso) {
+  try {
+    const [y, m, d] = iso.split('-').map(Number);
+    const months = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+    return `${d} ${months[m - 1]} ${y}`;
+  } catch { return iso; }
 }
 
 function Toggle({ checked, onChange }) {

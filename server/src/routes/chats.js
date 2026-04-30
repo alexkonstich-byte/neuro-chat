@@ -10,7 +10,7 @@ const r = Router();
 
 r.get('/', (req, res) => {
   const rows = db.prepare(
-    `SELECT c.*, cm.last_read_message_id
+    `SELECT c.*, cm.last_read_message_id, cm.muted_until, cm.nickname
      FROM chats c
      JOIN chat_members cm ON cm.chat_id = c.id
      WHERE cm.user_id = ?
@@ -29,24 +29,29 @@ r.get('/', (req, res) => {
     let avatar = c.avatar_path;
     let peer = null;
     let streak = null;
+    const myNickname = c.nickname || null;
+    const mutedUntil = c.muted_until || 0;
     if (c.type === 'dm' || c.type === 'service') {
       const other = db.prepare(
         `SELECT u.* FROM chat_members cm JOIN users u ON u.id = cm.user_id
          WHERE cm.chat_id = ? AND cm.user_id != ?`
       ).get(c.id, req.user.id);
       if (other) {
-        title = other.display_name || other.username;
+        title = myNickname || other.display_name || other.username;
         avatar = other.avatar_path;
         peer = publicUser(other);
         if (c.type === 'dm') streak = getFriendshipStreak(req.user.id, other.id);
       }
     } else if (c.type === 'self') {
       title = 'Избранное';
+    } else if (c.type === 'group' && myNickname) {
+      title = myNickname;
     }
     return {
       id: c.id, type: c.type, title, avatar,
       lastMessage: last, unread, peer, streak,
       lastMessageAt: c.last_message_at,
+      mutedUntil, myNickname,
     };
   });
   res.json({ chats: result });
@@ -189,6 +194,8 @@ r.get('/:id', (req, res) => {
     members: members.map(publicUser),
     peer,
     streak,
+    mutedUntil: member.muted_until || 0,
+    myNickname: member.nickname || null,
   });
 });
 
@@ -213,6 +220,27 @@ r.post('/:id/read', (req, res) => {
   db.prepare('UPDATE chat_members SET last_read_message_id = ? WHERE chat_id = ? AND user_id = ?')
     .run(last, chatId, req.user.id);
   res.json({ ok: true, lastReadId: last });
+});
+
+r.post('/:id/mute', (req, res) => {
+  const chatId = Number(req.params.id);
+  const member = db.prepare('SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?').get(chatId, req.user.id);
+  if (!member) return res.status(403).json({ error: 'not_member' });
+  const minutes = Number(req.body?.minutes ?? 0);
+  const muteUntil = minutes > 0 ? Date.now() + minutes * 60 * 1000 : 0;
+  db.prepare('UPDATE chat_members SET muted_until = ? WHERE chat_id = ? AND user_id = ?')
+    .run(muteUntil, chatId, req.user.id);
+  res.json({ ok: true, mutedUntil: muteUntil });
+});
+
+r.patch('/:id/nickname', (req, res) => {
+  const chatId = Number(req.params.id);
+  const member = db.prepare('SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?').get(chatId, req.user.id);
+  if (!member) return res.status(403).json({ error: 'not_member' });
+  const nickname = String(req.body?.nickname ?? '').slice(0, 60) || null;
+  db.prepare('UPDATE chat_members SET nickname = ? WHERE chat_id = ? AND user_id = ?')
+    .run(nickname, chatId, req.user.id);
+  res.json({ ok: true, nickname });
 });
 
 export function annotateMessage(m) {

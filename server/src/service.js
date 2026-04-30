@@ -43,7 +43,7 @@ export function ensureNeuroChat(userId) {
   return chatId;
 }
 
-export function postSystemMessage(chatId, text, kind = 'system') {
+export function postSystemMessage(chatId, text, kind = 'text') {
   const botId = getNeuroBotId();
   const t = now();
   const r = db.prepare(

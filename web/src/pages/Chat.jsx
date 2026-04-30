@@ -6,6 +6,8 @@ import { getSocket } from '../socket.js';
 import { Avatar, NameLine } from '../components/UserChip.jsx';
 import { BackButton, IconButton, Sheet, Button, Tag, Field, Input, Card } from '../components/ui.jsx';
 import GroupCall from '../components/GroupCall.jsx';
+import { useContextMenu } from '../components/ContextMenu.jsx';
+import { toast } from '../store.js';
 
 const QUICK_REACTIONS = ['❤️', '👍', '😂', '🔥', '😮', '😢', '🎉'];
 
@@ -22,13 +24,16 @@ export default function Chat() {
   const [chatMeta, setChatMeta] = useState(null);
   const [text, setText] = useState('');
   const [replyTo, setReplyTo] = useState(null);
-  const [actionMsg, setActionMsg] = useState(null);
   const [pendingFiles, setPendingFiles] = useState([]);
   const [voice, setVoice] = useState(null);
   const [callState, setCallState] = useState(null);
   const [groupCall, setGroupCall] = useState(null); // { kind } or null
   const [activeGroupCall, setActiveGroupCall] = useState(null); // someone else is in a call
   const [membersOpen, setMembersOpen] = useState(false);
+  const [muteOpen, setMuteOpen] = useState(false);
+  const [nicknameOpen, setNicknameOpen] = useState(false);
+  const msgCtx  = useContextMenu();
+  const userCtx = useContextMenu();
   const fileInput = useRef(null);
   const galleryInput = useRef(null);
   const scrollRef = useRef(null);
@@ -142,6 +147,7 @@ export default function Chat() {
         recording: true,
         kind: videoCircle ? 'video_note' : 'voice',
         startedAt,
+        stream,                                  // expose the live stream so the overlay can preview it
         stop:   () => { try { mr.stop(); } catch {} },
         cancel: () => { cancelled = true; try { mr.stop(); } catch {} },
       });
@@ -158,7 +164,6 @@ export default function Chat() {
 
   const reactTo = (msgId, emoji) => {
     getSocket().emit('message:react', { id: msgId, emoji });
-    setActionMsg(null);
   };
 
   const isPeerTyping = useMemo(() => {
@@ -221,19 +226,32 @@ export default function Chat() {
     : isPeerTyping ? 'печатает…'
     : (peer && online[peer.id] ? 'в сети' : 'не в сети');
 
+  const isMuted = chatMeta && (chatMeta.mutedUntil > Date.now());
+  const myNickname = chatMeta?.myNickname || null;
+
   return (
     <div className="h-full flex flex-col bg-ink-950">
       {/* HEADER */}
       <div className="safe-top sticky top-0 z-20 surface-strong border-b border-white/5 px-2 py-2 flex items-center gap-2">
         <div className="lg:hidden"><BackButton to="/" /></div>
         <button
-          onClick={() => isGroup ? setMembersOpen(true) : null}
-          className={`flex items-center gap-3 flex-1 min-w-0 ${isGroup ? 'press' : ''}`}
+          {...(peer && !isService && !isSelf ? userCtx.handlers(() => buildUserMenu({
+            user: peer, me,
+            onOpenProfile: () => location.assign(`/profile/${peer.username}`),
+            onMute: () => setMuteOpen(true),
+            onNickname: () => setNicknameOpen(true),
+          })) : {})}
+          onClick={() => {
+            if (isGroup) setMembersOpen(true);
+            else if (peer && !isService && !isSelf) location.assign(`/profile/${peer.username}`);
+          }}
+          className={`flex items-center gap-3 flex-1 min-w-0 ${(isGroup || (peer && !isService && !isSelf)) ? 'press' : ''}`}
         >
           {headerAvatar}
           <div className="min-w-0 text-left">
-            <div className="font-display text-base truncate">
+            <div className="font-display text-base truncate flex items-center gap-1.5">
               {peer && !isSelf && !isService ? <NameLine user={peer} /> : headerTitle}
+              {isMuted && <span title="Чат заглушён" className="text-xs opacity-60">🔕</span>}
             </div>
             <div className="text-[11px] text-white/55 truncate">{headerSubtitle}</div>
           </div>
@@ -278,6 +296,7 @@ export default function Chat() {
         lastScrollTopRef.current = e.currentTarget.scrollTop;
         if (e.currentTarget.scrollTop < 80) loadOlder();
       }} className="flex-1 overflow-y-auto px-2 py-3 space-y-1.5">
+        {isService && <NeuroIntroCard />}
         {grouped.map((block, bi) => {
           const isMe = block.senderId === me?.id;
           const isSystem = block.kind === 'system' || !block.senderId;
@@ -291,16 +310,29 @@ export default function Chat() {
             );
           }
           const sender = memberById[block.senderId] || (peer && peer.id === block.senderId ? peer : null);
+          const senderLink = sender && !sender.isBot && sender.id !== me?.id
+            ? `/profile/${sender.username}` : null;
           return (
             <div key={bi} className={`flex gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
-              {!isMe && !isSelf && <Avatar user={sender} size={32} />}
+              {!isMe && !isSelf && (
+                senderLink
+                  ? <Link to={senderLink}><Avatar user={sender} size={32} /></Link>
+                  : <Avatar user={sender} size={32} />
+              )}
               <div className={`max-w-[80%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                 {block.messages.map((m, i) => (
                   <MessageBubble
                     key={m.id} m={m} mine={isMe} sender={sender}
                     showSender={!isMe && i === 0 && (isGroup) && !!sender}
-                    onLongPress={() => setActionMsg(m)}
-                    onReply={() => setReplyTo(m)}
+                    senderLink={senderLink}
+                    contextHandlers={msgCtx.handlers(() => buildMessageMenu({
+                      m, mine: isMe, onReply: () => setReplyTo(m), onCopy: () => {
+                        if (m.text) { navigator.clipboard.writeText(m.text); toast.ok('Скопировано'); }
+                      },
+                      onDelete: () => getSocket().emit('message:delete', { id: m.id }),
+                      onReact: (emoji) => getSocket().emit('message:react', { id: m.id, emoji }),
+                    }))}
+                    onReact={reactTo}
                   />
                 ))}
               </div>
@@ -391,32 +423,21 @@ export default function Chat() {
       {/* Push-to-hold recording overlay */}
       {voice?.recording && <RecordingOverlay voice={voice} onCancel={() => stopHoldRecord(true)} onSend={() => stopHoldRecord(false)} />}
 
-      {/* Action sheet */}
-      <Sheet open={!!actionMsg} onClose={() => setActionMsg(null)} title="Сообщение">
-        <div className="p-1">
-          <div className="surface rounded-2xl p-2 mb-2 flex justify-around text-2xl">
-            {QUICK_REACTIONS.map((e) => (
-              <button key={e} onClick={() => reactTo(actionMsg.id, e)} className="press px-1 py-1 hover:scale-110">{e}</button>
-            ))}
-          </div>
-          <Card className="!p-0 divide-y divide-white/10">
-            <button onClick={() => { setReplyTo(actionMsg); setActionMsg(null); }} className="press w-full text-left px-4 py-3.5">↩︎ Ответить</button>
-            {actionMsg?.text && (
-              <button onClick={() => { navigator.clipboard.writeText(actionMsg.text); setActionMsg(null); flashToast('Скопировано', 'ok'); }} className="press w-full text-left px-4 py-3.5">📋 Копировать</button>
-            )}
-            {actionMsg?.senderId === me?.id && (
-              <button onClick={() => {
-                getSocket().emit('message:delete', { id: actionMsg.id });
-                setActionMsg(null);
-              }} className="press w-full text-left px-4 py-3.5 text-bad">🗑 Удалить</button>
-            )}
-          </Card>
-        </div>
-      </Sheet>
+      {/* Custom right-click / long-press menus */}
+      {msgCtx.element}
+      {userCtx.element}
 
       {/* Members sheet */}
       <MembersSheet open={membersOpen} onClose={() => setMembersOpen(false)} chat={chatMeta} me={me}
                     onChanged={() => api.chat(chatId).then((r) => setChatMeta(r))} />
+
+      <MuteSheet open={muteOpen} onClose={() => setMuteOpen(false)} chatId={chatId}
+                 isMuted={isMuted} mutedUntil={chatMeta?.mutedUntil}
+                 onChanged={() => api.chat(chatId).then((r) => setChatMeta(r))} />
+
+      <NicknameSheet open={nicknameOpen} onClose={() => setNicknameOpen(false)} chatId={chatId}
+                     current={myNickname}
+                     onChanged={() => api.chat(chatId).then((r) => setChatMeta(r))} />
 
       {callState && <CallOverlay chat={chatMeta} state={callState} setState={setCallState} />}
       {groupCall && (
@@ -432,26 +453,21 @@ export default function Chat() {
   );
 }
 
-function MessageBubble({ m, mine, sender, showSender, onLongPress, onReply }) {
-  const [pressId, setPressId] = useState(null);
-  const start = () => {
-    const t = setTimeout(() => onLongPress(), 380);
-    setPressId(t);
-  };
-  const stop = () => { if (pressId) { clearTimeout(pressId); setPressId(null); } };
+function MessageBubble({ m, mine, sender, showSender, senderLink, contextHandlers }) {
   const reactions = m.reactions ? Object.entries(m.reactions) : [];
-
   const senderColorIdx = (sender?.id || 0) % SENDER_COLORS.length;
 
   return (
-    <div onTouchStart={start} onTouchEnd={stop} onMouseDown={start} onMouseUp={stop} onMouseLeave={stop}
-      onDoubleClick={onReply}
+    <div
+      {...(contextHandlers || {})}
       className={`bubble-in my-0.5 px-3 py-2 max-w-full ${mine
         ? 'bg-hero-gradient text-white rounded-2xl rounded-br-md shadow-glow-brand/40'
         : 'bg-ink-700 text-white rounded-2xl rounded-bl-md'}`}>
       {showSender && sender && (
         <div className={`text-xs font-semibold mb-0.5 ${SENDER_COLORS[senderColorIdx]}`}>
-          <NameLine user={sender} withEmoji={false} />
+          {senderLink
+            ? <Link to={senderLink} className="hover:underline"><NameLine user={sender} withEmoji={false} /></Link>
+            : <NameLine user={sender} withEmoji={false} />}
         </div>
       )}
       {m.replyTo && (
@@ -586,6 +602,101 @@ function MembersSheet({ open, onClose, chat, me, onChanged }) {
   );
 }
 
+function NeuroIntroCard() {
+  const [busy, setBusy] = React.useState(false);
+  const [open, setOpen] = React.useState(null); // 'bug' | 'feature' | 'message' | null
+  const [text, setText] = React.useState('');
+  const submit = async () => {
+    if (text.trim().length < 3) return;
+    setBusy(true);
+    try {
+      await api.sendFeedback(open, text.trim());
+      toast.ok('Спасибо! Заявка отправлена', 'Я получу её в админке');
+      setText(''); setOpen(null);
+    } catch (e) {
+      toast.bad('Не удалось отправить');
+    } finally { setBusy(false); }
+  };
+  const titles = { bug: 'Сообщить о баге', feature: 'Предложить фичу', message: 'Написать админу' };
+  const msgBubble = (content) => (
+    <div className="flex gap-2 justify-start my-1.5">
+      <div className="w-8 h-8 rounded-full bg-premium-gradient grid place-items-center font-display text-sm font-black shadow-glow-premium shrink-0">N</div>
+      <div className="max-w-[80%] bg-ink-700 text-white rounded-2xl rounded-bl-md px-3 py-2 text-sm">
+        {content}
+      </div>
+    </div>
+  );
+  return (
+    <div className="px-1 py-2">
+      {msgBubble(
+        <div>
+          <p className="font-semibold mb-1">Привет 👋 Это чат Neuro.</p>
+          <p className="text-white/70 text-xs mb-2.5">Здесь приходят коды входа и системные оповещения. Если нашёл баг или хочешь что-то предложить — нажми ниже:</p>
+          <div className="grid grid-cols-3 gap-1.5">
+            <button onClick={() => setOpen('bug')}     className="press bg-white/10 hover:bg-white/20 rounded-xl py-2 text-xs font-semibold transition">🐞 Баг</button>
+            <button onClick={() => setOpen('feature')} className="press bg-white/10 hover:bg-white/20 rounded-xl py-2 text-xs font-semibold transition">💡 Идея</button>
+            <button onClick={() => setOpen('message')} className="press bg-white/10 hover:bg-white/20 rounded-xl py-2 text-xs font-semibold transition">✉️ Админу</button>
+          </div>
+          {open && (
+            <div className="mt-2.5 space-y-1.5 animate-slide-up">
+              <div className="text-[10px] uppercase tracking-widest text-white/50 font-mono">{titles[open]}</div>
+              <textarea
+                value={text} onChange={(e) => setText(e.target.value)}
+                rows={3} maxLength={4000}
+                className="w-full bg-ink-800 rounded-xl border border-white/[0.06] px-3 py-2 outline-none focus:border-brand-indigo/60 text-xs"
+                placeholder={open === 'bug' ? 'Опиши баг...' : open === 'feature' ? 'Какую фичу хочешь?' : 'Что хочешь сказать?'}
+              />
+              <div className="flex gap-1.5">
+                <button disabled={busy || text.trim().length < 3} onClick={submit}
+                  className="press flex-1 py-1.5 rounded-xl bg-hero-gradient text-xs font-semibold disabled:opacity-50">
+                  {busy ? '...' : 'Отправить'}
+                </button>
+                <button onClick={() => { setOpen(null); setText(''); }} className="press py-1.5 px-3 rounded-xl bg-white/[0.06] text-xs">Отмена</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function buildMessageMenu({ m, mine, onReply, onCopy, onDelete, onReact }) {
+  const reactRow = {
+    label: '— реакции —',
+    disabled: false,
+    icon: '⌣',
+    onSelect: () => {},
+    // we render a special row via a custom item (see below) — for simplicity we add quick-react entries:
+  };
+  const items = [];
+  for (const e of ['❤️','👍','😂','🔥','😮']) {
+    items.push({ icon: e, label: `Реакция ${e}`, onSelect: () => onReact(e) });
+  }
+  items.push(null);
+  items.push({ icon: '↩︎', label: 'Ответить', onSelect: onReply });
+  if (m.text) items.push({ icon: '📋', label: 'Копировать текст', onSelect: onCopy });
+  if (mine) {
+    items.push(null);
+    items.push({ icon: '🗑', label: 'Удалить', danger: true, onSelect: onDelete });
+  }
+  return items;
+}
+
+function buildUserMenu({ user, me, onOpenProfile, onMute, onNickname }) {
+  const items = [
+    { icon: '👤', label: 'Открыть профиль', onSelect: onOpenProfile },
+    null,
+    { icon: '🔕', label: 'Заглушить чат', onSelect: onMute },
+    { icon: '✏️', label: 'Переименовать в чате', onSelect: onNickname },
+  ];
+  if (me?.isAdmin && !user?.isAdmin) {
+    items.push(null);
+    items.push({ icon: '🚫', label: 'Забанить (админка)', danger: true, onSelect: () => location.assign('/admin') });
+  }
+  return items;
+}
+
 function groupBlocks(msgs) {
   const out = [];
   for (const m of msgs) {
@@ -673,29 +784,50 @@ function HoldButton({ onHoldStart, onHoldEnd, active, emoji, title }) {
 // ---- Recording overlay: shows mic/cam, level, duration, "release to send / drag up to cancel" ----
 function RecordingOverlay({ voice, onCancel, onSend }) {
   const [elapsed, setElapsed] = React.useState(0);
+  const videoRef = React.useRef(null);
   React.useEffect(() => {
     const t = setInterval(() => setElapsed(Date.now() - voice.startedAt), 100);
     return () => clearInterval(t);
   }, [voice.startedAt]);
+  React.useEffect(() => {
+    if (videoRef.current && voice.stream && voice.kind === 'video_note') {
+      videoRef.current.srcObject = voice.stream;
+    }
+  }, [voice.stream, voice.kind]);
   const mm = String(Math.floor(elapsed / 60000)).padStart(2, '0');
   const ss = String(Math.floor(elapsed / 1000) % 60).padStart(2, '0');
   const isCircle = voice.kind === 'video_note';
+
   return (
-    <div className="fixed inset-0 z-50 bg-ink-950/80 backdrop-blur-md flex flex-col items-center justify-center p-6">
-      <div className="surface-strong rounded-4xl p-8 w-full max-w-sm text-center">
-        <div className="font-display text-base text-white/70 mb-3">
+    <div className="fixed inset-0 z-50 bg-ink-950/85 backdrop-blur-md flex flex-col items-center justify-center p-6">
+      <div className="surface-strong rounded-4xl p-6 w-full max-w-sm text-center">
+        <div className="font-display text-base text-white/70 mb-4">
           {isCircle ? 'Запись кружка' : 'Запись голосового'}
         </div>
-        <div className="relative mx-auto w-32 h-32 mb-4">
-          {/* Pulsing circles */}
-          <div className="absolute inset-0 rounded-full bg-bad/30 animate-ping" />
-          <div className="absolute inset-2 rounded-full bg-bad/40 animate-pulse-soft" />
-          <div className="relative w-full h-full rounded-full bg-bad text-white grid place-items-center text-5xl shadow-2xl">
-            {isCircle ? '🎥' : '🎙'}
+        <div className="relative mx-auto w-56 h-56 mb-4">
+          {/* Pulsing rings */}
+          <div className="absolute inset-0 rounded-3xl bg-bad/25 animate-ping" />
+          <div className="absolute inset-2 rounded-3xl bg-bad/30 animate-pulse-soft" />
+          {isCircle ? (
+            <video
+              ref={videoRef} autoPlay playsInline muted
+              // mirror the camera so it feels like a selfie
+              style={{ transform: 'scaleX(-1)' }}
+              className="relative w-full h-full rounded-3xl object-cover bg-ink-900 shadow-2xl border border-bad/40"
+            />
+          ) : (
+            <div className="relative w-full h-full rounded-3xl bg-bad text-white grid place-items-center text-7xl shadow-2xl">
+              🎙
+            </div>
+          )}
+          {/* Recording indicator */}
+          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/55 px-2 py-1 rounded-full">
+            <span className="w-2 h-2 rounded-full bg-bad animate-pulse-soft" />
+            <span className="text-[10px] uppercase tracking-widest font-mono">REC</span>
           </div>
         </div>
-        <div className="font-mono text-2xl text-white">{mm}:{ss}</div>
-        <div className="text-xs text-white/55 mt-3">Отпусти, чтобы отправить · Свайп вверх — отменить</div>
+        <div className="font-mono text-3xl text-white">{mm}:{ss}</div>
+        <div className="text-xs text-white/55 mt-3">Отпусти кнопку, чтобы отправить · Свайп вверх — отмена</div>
         <div className="mt-5 flex justify-center gap-3">
           <button onClick={onCancel}
             className="press px-5 py-2.5 rounded-full bg-white/10 border border-white/15 font-semibold">
@@ -751,5 +883,80 @@ function CallOverlay({ chat, state, setState }) {
         Завершить
       </button>
     </div>
+  );
+}
+
+function MuteSheet({ open, onClose, chatId, isMuted, mutedUntil, onChanged }) {
+  const [busy, setBusy] = React.useState(false);
+  const options = [
+    { label: '30 минут', minutes: 30 },
+    { label: '1 час', minutes: 60 },
+    { label: '8 часов', minutes: 480 },
+    { label: '1 день', minutes: 1440 },
+    { label: 'Навсегда', minutes: 60 * 24 * 365 * 10 },
+  ];
+  const mute = async (minutes) => {
+    setBusy(true);
+    try {
+      await api.muteChat(chatId, minutes);
+      await onChanged?.();
+      onClose();
+    } finally { setBusy(false); }
+  };
+  const unmute = async () => {
+    setBusy(true);
+    try {
+      await api.muteChat(chatId, 0);
+      await onChanged?.();
+      onClose();
+    } finally { setBusy(false); }
+  };
+  return (
+    <Sheet open={open} onClose={onClose} title="Заглушить чат">
+      <div className="p-3 space-y-2">
+        {isMuted && (
+          <button onClick={unmute} disabled={busy}
+            className="press w-full py-3 rounded-2xl bg-ok/20 border border-ok/30 text-ok font-semibold text-sm">
+            🔔 Включить уведомления
+          </button>
+        )}
+        {options.map((o) => (
+          <button key={o.minutes} onClick={() => mute(o.minutes)} disabled={busy}
+            className="press w-full py-3 rounded-2xl surface border border-white/[0.06] text-sm font-semibold">
+            🔕 {o.label}
+          </button>
+        ))}
+      </div>
+    </Sheet>
+  );
+}
+
+function NicknameSheet({ open, onClose, chatId, current, onChanged }) {
+  const [value, setValue] = React.useState('');
+  const [busy, setBusy] = React.useState(false);
+  React.useEffect(() => { if (open) setValue(current || ''); }, [open, current]);
+  const save = async () => {
+    setBusy(true);
+    try {
+      await api.setChatNickname(chatId, value.trim());
+      await onChanged?.();
+      onClose();
+    } finally { setBusy(false); }
+  };
+  return (
+    <Sheet open={open} onClose={onClose} title="Имя чата для тебя">
+      <div className="p-3 space-y-3">
+        <Field label="Псевдоним">
+          <Input
+            value={value} onChange={(e) => setValue(e.target.value)}
+            placeholder="Оставь пустым — вернётся оригинал"
+            maxLength={60}
+          />
+        </Field>
+        <Button onClick={save} disabled={busy} className="w-full h-12">
+          {busy ? 'Сохраняем…' : 'Сохранить'}
+        </Button>
+      </div>
+    </Sheet>
   );
 }

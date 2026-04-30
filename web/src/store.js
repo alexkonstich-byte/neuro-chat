@@ -1,6 +1,30 @@
 import { create } from 'zustand';
 import { api, auth } from './api.js';
 
+// ---- Toasts ----
+let _toastId = 0;
+export const useToasts = create((set) => ({
+  list: [],
+  push(toast) {
+    const id = ++_toastId;
+    const t = { id, tone: 'ok', ttl: 3500, ...toast };
+    set((s) => ({ list: [...s.list, t] }));
+    setTimeout(() => set((s) => ({ list: s.list.filter((x) => x.id !== id) })), t.ttl);
+    return id;
+  },
+  remove(id) { set((s) => ({ list: s.list.filter((x) => x.id !== id) })); },
+}));
+export const toast = {
+  ok:    (title, hint) => useToasts.getState().push({ title, hint, tone: 'ok' }),
+  bad:   (title, hint) => useToasts.getState().push({ title, hint, tone: 'bad' }),
+  brand: (title, hint) => useToasts.getState().push({ title, hint, tone: 'brand' }),
+  premium: (title, hint) => useToasts.getState().push({ title, hint, tone: 'premium' }),
+  xp:    (delta, note) => useToasts.getState().push({
+    title: `${delta >= 0 ? '+' : ''}${delta} XP`, hint: note,
+    tone: delta >= 0 ? 'ok' : 'bad', icon: '✦',
+  }),
+};
+
 export const useAuth = create((set) => ({
   user: null,
   loading: true,

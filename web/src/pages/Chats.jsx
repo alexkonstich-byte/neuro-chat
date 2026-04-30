@@ -56,8 +56,15 @@ export default function Chats() {
       {/* HEADER */}
       <div className="safe-top sticky top-0 z-20 surface-strong border-b border-white/5 px-3 py-2.5">
         <div className="flex items-center gap-2.5">
-          <Link to="/profile" className="press shrink-0">
+          <Link to="/profile" className="press shrink-0" title="Профиль">
             <Avatar user={user} size={38} />
+          </Link>
+          <Link to="/settings" className="press shrink-0 w-10 h-10 grid place-items-center rounded-full hover:bg-white/10" title="Настройки">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M10 1.5 V4 M10 16 V18.5 M1.5 10 H4 M16 10 H18.5 M3.7 3.7 L5.4 5.4 M14.6 14.6 L16.3 16.3 M3.7 16.3 L5.4 14.6 M14.6 5.4 L16.3 3.7"
+                stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+            </svg>
           </Link>
           <div className="flex-1 relative">
             <input

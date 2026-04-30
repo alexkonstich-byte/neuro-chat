@@ -28,7 +28,7 @@ export function Avatar({ user, size = 40, ring = true }) {
   );
 }
 
-export function NameLine({ user, withPrefix = true, withEmoji = true, className = '' }) {
+export function NameLine({ user, withPrefix = true, withEmoji = true, withStatus = true, className = '' }) {
   if (!user) return null;
   const nickStyle = user.nickColor && user.isPremium ? { color: user.nickColor } : null;
   const prefixStyle = user.prefixColor && user.isPremium ? { color: user.prefixColor } : null;
@@ -42,11 +42,14 @@ export function NameLine({ user, withPrefix = true, withEmoji = true, className 
       {withEmoji && user.isPremium && user.customEmoji ? (
         <span className="ml-1">{user.customEmoji}</span>
       ) : null}
+      {withStatus && user.statusEmoji ? (
+        <span className="ml-1" title={user.statusText || ''}>{user.statusEmoji}</span>
+      ) : null}
     </span>
   );
 }
 
-export function ProfileBackground({ code, className = '', children }) {
+export function ProfileBackground({ code, className = '', children, payloadGradient }) {
   // Lookup gradient classes by code in a static table mirroring the seeded shop.
   const G = {
     bg_aurora:     'from-fuchsia-500 via-purple-600 to-indigo-700',
@@ -60,7 +63,7 @@ export function ProfileBackground({ code, className = '', children }) {
     bg_blood:      'from-rose-700 via-red-900 to-black',
     bg_white_gold: 'from-yellow-100 via-amber-300 to-orange-500',
   };
-  const cls = G[code] || 'from-ink-700 via-ink-800 to-ink-900';
+  const cls = payloadGradient || G[code] || 'from-ink-700 via-ink-800 to-ink-900';
   return (
     <div className={`relative bg-gradient-to-br ${cls} gradient-bg ${className}`}>{children}</div>
   );

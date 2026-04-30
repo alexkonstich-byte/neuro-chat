@@ -13,6 +13,7 @@ import shopRoutes from './routes/shop.js';
 import casinoRoutes from './routes/casino.js';
 import adminRoutes from './routes/admin.js';
 import uploadsRoutes from './routes/uploads.js';
+import feedbackRoutes from './routes/feedback.js';
 import { createSocketServer } from './socket.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -34,6 +35,7 @@ app.use('/api/chats', authMiddleware, chatsRoutes);
 app.use('/api/shop', authMiddleware, shopRoutes);
 app.use('/api/casino', authMiddleware, casinoRoutes);
 app.use('/api/uploads', authMiddleware, uploadsRoutes);
+app.use('/api/feedback', authMiddleware, feedbackRoutes);
 app.use('/api/admin', authMiddleware, adminOnly, adminRoutes);
 
 // Frontend SPA (built into web/dist) — served by nginx in prod, here as a fallback for "single-process dev".

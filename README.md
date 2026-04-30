@@ -1,208 +1,116 @@
+<div align="center">
+
 # Neuro
 
-Telegram-функциональный мессенджер. Кастомный «Neuro Premium» вместо телеграм-премиума, XP-экономика, магазин кастомизации, казино с джекпотом, огоньки дружбы, админка.
+**Open-source мессенджер с собственной экономикой XP.**
+Скорость Телеграма + магазин кастомизации, казино со слотами и кастомный Premium —
+всё за свои собственные баллы, без покупок реальных денег.
 
-Боевой адрес: **https://neurochat.space**
-Лендинг: **https://neurochat.space/info**
+🌐 **Живая версия:** [neurochat.space](https://neurochat.space) · [neurochat.space/info](https://neurochat.space/info)
 
----
-
-## Стек
-
-- **Backend:** Node.js ≥22.5 (ES modules), Express, Socket.io, встроенный `node:sqlite`. Никаких сторонних SQLite-драйверов и ORM.
-- **Frontend:** React 18, Vite, TailwindCSS, Zustand. PWA через `vite-plugin-pwa`.
-- **Process:** PM2.
-- **Reverse proxy:** Nginx + Let's Encrypt (certbot).
-- **OS:** Ubuntu 22.04.
+</div>
 
 ---
 
-## 🚀 Быстрая установка на твой Ubuntu 22.04 (один скрипт)
+## ✨ Что внутри
 
-> У тебя домашний сервер с белым IP, домен **neurochat.space** уже указывает на него.
-> Ниже — путь «всё одной командой».
+- 💬 **Real-time чаты** — реакции, ответы, редактирование, удаление, печатает, presence, прочитано.
+- 📞 **Аудио и видеозвонки** — P2P через WebRTC. Личные и групповые (mesh-режим).
+- 🎙 **Голос и кружки** — push-to-hold (жми и держи). Кружки — закруглённые квадраты с превью себя.
+- 🔖 **Избранное и Neuro-бот** — автоматически создаются для каждого. В чат Neuro идут коды входа и заявки в поддержку.
+- 🛒 **Магазин за XP** — 10+ анимированных фонов, обводки (включая радужную, пульсирующую, ауроровую), множители опыта, нейроны, префиксы.
+- 🎰 **Казино** — слоты с лидербордом. Джекпот 7-7-7 = Premium на 3 месяца.
+- 🔥 **Огоньки дружбы** — общайся каждый день, и счётчик в чате растёт. Прервёшь — обнулится.
+- ✦ **Neuro Premium** — цвет ника, цвет префикса, кастомный эмодзи, эксклюзивные косметики.
+- 👑 **VIP** — анимированные косметики бесплатно, видео-аватарка, особый значок.
+- 🛡 **Антиспам и админка** — глобальные/персональные банвордс, shadow-баны, инбокс заявок (баги и идеи).
+- 📲 **PWA** — устанавливается «как приложение» на телефон или ПК.
+- 🌌 **Дизайн** — Bricolage Grotesque + Plus Jakarta Sans, indigo→fuchsia→sky градиенты, halo-меши, spring-анимации.
 
-### A. Что нужно проверить ДО запуска
+## 🧱 Стек
 
-1. **Домен указывает на сервер.** Проверь `dig +short neurochat.space` — должен вернуть твой публичный IP. И для `www.neurochat.space` тоже желательно (но необязательно).
-2. **Порты пробросены/открыты на роутере и в Ubuntu**:
-   - **80/tcp** (HTTP, нужен certbot для выдачи сертификата)
-   - **443/tcp** (HTTPS, основной)
-   - **22/tcp** (SSH — если заходишь по сети; на самом сервере не обязателен)
+| Слой | Технология |
+|------|------------|
+| **Backend** | Node.js ≥22 (ESM) · Express · Socket.io · `node:sqlite` (без ORM, без сторонних драйверов) |
+| **Frontend** | React 18 · Vite · TailwindCSS · Zustand · `vite-plugin-pwa` |
+| **Realtime** | WebSocket · WebRTC P2P (STUN; coturn опционально) |
+| **Deploy** | Ubuntu 22.04 · PM2 · Nginx · Let's Encrypt (certbot) |
 
-   Если сидишь за домашним роутером — пробрось в его настройках **80→80** и **443→443** на локальный IP компьютера-сервера.
-   Скрипт `bootstrap.sh` сам откроет 22/80/443 в `ufw`.
+Никаких Docker-контейнеров, ORM, сторонних SQLite-драйверов и платных сервисов.
+Один SQLite-файл — вся база. Один bash-скрипт — установка с нуля. Бэкап = `cp neuro.db neuro.db.bak`.
 
-3. **Системные требования:** 1 ГБ RAM минимум (комфортно — 2 ГБ), 5 ГБ свободного места.
+## 🚀 Запуск у себя
 
-### B. Запуск
+Полная инструкция: **[DEPLOY.md](./DEPLOY.md)**.
+
+TL;DR на чистом Ubuntu 22.04:
 
 ```bash
-# 1) Скачай репу куда хочешь (скрипт сам перенесёт в /opt/neuro)
 git clone https://github.com/alexkonstich-byte/neuro-chat.git ~/neuro
 cd ~/neuro
-
-# 2) Поставь всё одной командой:
 bash deploy/bootstrap.sh
 ```
 
-Скрипт сам:
-- поставит Node 22, PM2, Nginx, certbot;
-- откроет порты 22/80/443 в ufw;
-- скопирует код в `/opt/neuro` (если он не там);
-- сделает `npm install` и `npm run build`;
-- положит nginx-конфиг с правильным доменом, перезапустит nginx;
-- запросит Let's Encrypt сертификат для `neurochat.space` и `www.neurochat.space`;
-- запустит сервер через PM2 и пропишет автозапуск при загрузке.
+Это поставит Node 22, PM2, Nginx, certbot, скопирует код в `/opt/neuro`, выпустит Let's Encrypt SSL и запустит сервер. После — открой `https://your-domain` и регистрируйся.
 
-После успешного завершения открой **https://neurochat.space** — увидишь экран логина.
-Зарегистрируйся под `alexserguntsov` — этот пользователь автоматически становится админом, у тебя появится кнопка `/admin`.
+> Первый пользователь с username `alexserguntsov` автоматически становится админом.
 
-> **Если certbot ругается** — значит домен ещё не указывает на сервер с интернета,
-> или 80-й порт не проброшен. Проверь и перезапусти `sudo certbot --nginx -d neurochat.space -d www.neurochat.space`.
+## 📡 Архитектура
 
-### C. Обновление кода
-
-Просто запусти:
-
-```bash
-bash /opt/neuro/deploy/update.sh
+```
+Browser
+  │
+  └─► Nginx :443 ─┬─► /              → SPA из /opt/neuro/web/dist
+                  ├─► /api/          → 127.0.0.1:3001 (Node)
+                  ├─► /socket.io/    → 127.0.0.1:3001 (WebSocket)
+                  └─► /uploads/      → /opt/neuro/server/data/uploads (отдаёт сам nginx)
 ```
 
-Скрипт сделает `git reset --hard origin/main`, пересоберёт фронт, перезапустит PM2 и обновит nginx. Можно повесить на cron / GitHub-webhook.
+Внутрь интернета смотрят только 80 (редирект) и 443 (HTTPS). Node слушает 3001 локально.
+
+## 🗺 Структура
+
+```
+.
+├── server/           # Node.js + Express + Socket.io backend
+│   ├── src/
+│   │   ├── routes/   # auth · profile · chats · shop · casino · admin · feedback · uploads
+│   │   ├── db.js     # вся схема SQLite + миграции
+│   │   ├── socket.js # сокет-сервер: чат, реакции, типинг, presence, WebRTC сигналинг
+│   │   ├── xp.js     # XP, антифлуд, множители, премиум, огоньки дружбы
+│   │   └── service.js# системный бот Neuro, Saved chat, login alerts
+│   └── data/         # SQLite + uploads (бэкапь это)
+├── web/              # React 18 + Vite frontend
+│   └── src/
+│       ├── pages/    # Login · Register · Info · Chats · Chat · Profile · Shop · Casino · Admin · Settings
+│       ├── components/  # ui, ContextMenu, GroupCall, UserChip
+│       └── utils/    # image resizer, etc.
+├── deploy/
+│   ├── bootstrap.sh  # одна команда — ставит всё с нуля
+│   ├── update.sh     # одна команда — обновляет всё
+│   ├── nginx.conf    # HTTPS
+│   ├── nginx-http.conf  # HTTP-only для фазы certbot
+│   └── ecosystem.config.cjs # PM2
+└── DEPLOY.md         # полные инструкции
+```
+
+## 🤝 Как помочь
+
+- **Нашёл баг или хочешь фичу?** Зайди в чат **Neuro** внутри приложения — там кнопки «Баг», «Идея», «Сообщение админу». Заявки попадают в админ-инбокс автора.
+- **Хочешь PR?** Форкай, создавай ветку, открывай pull request на `main`.
+
+## 📜 Лицензия
+
+MIT. Полный текст — в [LICENSE](./LICENSE) (если файла нет, считай что это MIT).
+
+## 👤 Автор
+
+**Alex Serguntsov** — делает Neuro как личный домашний мессенджер.
 
 ---
 
-## 🧰 Локальная разработка (на любой машине)
+<div align="center">
 
-```bash
-# терминал 1 — backend
-cd server
-cp .env.example .env
-npm install
-npm run dev      # node --watch --experimental-sqlite src/index.js (port 3001)
+Made with ❤️ on a home Ubuntu server.
 
-# терминал 2 — frontend
-cd web
-npm install
-npm run dev      # vite на :5173, прокси на 3001
-```
-
-Открой http://localhost:5173.
-
----
-
-## 🔐 Авторизация
-
-- **Логин:** username + password.
-- **Регистрация:** username + password + имя.
-- **Войти на другом устройстве по коду:** уже залогиненный пользователь жмёт в Профиле «Войти на другом устройстве» → 8-значный код. На новом устройстве: «Войти по коду» → username + код. Код также падает в чат **Neuro**.
-
-**Админ:** первый пользователь с username `alexserguntsov` автоматически получает `is_admin = 1`.
-
-Все системные события (вход в аккаунт, выдача кода, джекпот в казино) приходят в служебный чат **Neuro**, который автоматически создаётся для каждого пользователя.
-
-Каждому пользователю также сразу создаётся чат **Избранное** — закрепляется сверху, никто кроме тебя его не видит.
-
----
-
-## 🌐 Архитектура и порты
-
-```
-Browser ──► Nginx :443 ─┬─► /                 → /opt/neuro/web/dist (статика SPA)
-                        ├─► /api/             → 127.0.0.1:3001 (Node)
-                        ├─► /socket.io/       → 127.0.0.1:3001 (WebSocket)
-                        └─► /uploads/         → /opt/neuro/server/data/uploads (статика)
-```
-
-- **Внешние порты:** 80 (редирект на 443) и 443 (HTTPS). Всё.
-- **Внутренний порт Node-сервера:** 3001 (наружу не торчит).
-
----
-
-## 📁 Что и где лежит на сервере
-
-После `bootstrap.sh`:
-
-```
-/opt/neuro/
-├── server/
-│   ├── .env                # настройки (PORT, PUBLIC_ORIGIN, DATA_DIR…)
-│   ├── data/
-│   │   ├── neuro.db        # SQLite — это вся база. Бэкапь её копированием.
-│   │   ├── uploads/        # фото, видео, голосовые, аватары
-│   │   └── pm2-*.log       # логи
-│   └── src/...
-├── web/
-│   └── dist/               # собранный фронт, который раздаёт nginx
-└── deploy/
-    ├── ecosystem.config.cjs  # PM2 конфиг
-    ├── nginx.conf            # копия в /etc/nginx/sites-available/neuro
-    ├── bootstrap.sh
-    └── update.sh
-```
-
----
-
-## 🛠 Управление сервером
-
-```bash
-pm2 status                 # состояние процесса
-pm2 logs neuro-server      # хвост логов
-pm2 restart neuro-server   # перезапустить
-pm2 stop neuro-server      # остановить
-
-sudo systemctl reload nginx
-sudo certbot renew         # обновление сертификата (cron уже есть от пакета certbot)
-```
-
-**Бэкап базы:**
-
-```bash
-cp /opt/neuro/server/data/neuro.db /opt/neuro/server/data/neuro.db.bak.$(date +%F)
-```
-
----
-
-## ✨ Что работает в v0.2
-
-- 🔐 Авторизация username/password + код-вход с другого устройства.
-- 💬 Чаты 1-на-1, реакции, ответы, редактирование/удаление, печатает, presence.
-- 🔖 «Избранное» (self-чат) автоматически у каждого, закреплено сверху.
-- 🤖 Системный бот **Neuro** шлёт логи входов и коды в личный чат пользователя.
-- 📎 Фото / видео / файлы / голосовые / видеокружки.
-- 📞 Аудио и видеозвонки P2P (WebRTC + STUN). Без TURN за NAT может не пройти — отдельный шаг.
-- 💰 XP за сообщение (настройка `xp_per_message` в админке), антифлуд (повторы и burst-окно).
-- 🛒 Магазин: 10 анимированных фонов, 4 обводки, множители x2/x5/x10, нейроны, слот префикса. **Возврат — 5 минут.**
-- 🎰 Казино: слоты, бан-блок, лидерборд день/неделя/месяц, **джекпот 7-7-7 = +Neuro Premium 3 мес.**
-- 🔥 Огоньки дружбы в DM (3+ дня подряд).
-- ✦ Premium: цвет ника, цвет/эмодзи в префиксе, кастомный эмодзи после ника.
-- ⚙ Админка: ±XP, ±нейроны, премиум, бан, shadow-ban, банвордс (global/per-user), настройки, эксклюзивные предметы и их выдача.
-- 📲 PWA — устанавливается «как приложение» на Android/iOS/Desktop.
-- 🌍 Публичный лендинг **/info**.
-
-## 📌 Что осталось
-
-- TURN-сервер (coturn) для звонков за NAT.
-- Группы и каналы (таблицы готовы, UI и ручек нет).
-- Native iOS/Android.
-- Превью ссылок, упоминания, синк прочитано в реальном времени.
-
----
-
-## 🆘 FAQ / частые проблемы
-
-**Q. Открыл `https://neurochat.space` — `502 Bad Gateway`.**
-A. Не запущен Node. `pm2 status` → `pm2 restart neuro-server`. Посмотри `pm2 logs neuro-server`.
-
-**Q. Открыл `http://neurochat.space` — белый экран / 404.**
-A. Не собран фронт. `bash /opt/neuro/deploy/update.sh` или вручную `cd /opt/neuro/web && npm run build`.
-
-**Q. `node:sqlite is experimental`.**
-A. Это норма на Node 22. PM2 уже запускает с `--experimental-sqlite`.
-
-**Q. WebSocket не коннектится через Nginx.**
-A. В `nginx.conf` для `/socket.io/` обязательны `Upgrade`/`Connection: upgrade` — они уже есть. Если используешь свой кастомный конфиг — скопируй блок из `deploy/nginx.conf`.
-
-**Q. Звонки не идут между разными сетями.**
-A. Поставь TURN-сервер (coturn) — отдельный шаг. STUN-only хватает только если у обоих участников открыт NAT.
+</div>
