@@ -57,7 +57,7 @@ export function NameLine({ user, withPrefix = true, withEmoji = true, withStatus
         <span style={prefixStyle} className="opacity-90 mr-1">{user.prefixText}</span>
       ) : null}
       <span style={nickStyle} className="font-semibold">{user.displayName || user.username}</span>
-      {user.isPremium && <span className="ml-1 text-xs opacity-80" title="Neuro Premium">✦</span>}
+      {user.isPremium && <span className="ml-1 text-xs opacity-80" title="Allsafe Premium">✦</span>}
       {withEmoji && user.isPremium && user.customEmoji ? (
         <span className="ml-1">{user.customEmoji}</span>
       ) : null}

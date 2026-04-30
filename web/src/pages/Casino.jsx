@@ -98,7 +98,7 @@ export default function Casino() {
             {last && (
               <div className="mt-3 rounded-2xl p-4 text-center bg-black/40 border border-white/10 animate-pop">
                 {last.jackpot ? (
-                  <div className="font-display text-2xl font-bold text-premium-amber">🎉 ДЖЕКПОТ! +Neuro Premium 3 мес.</div>
+                  <div className="font-display text-2xl font-bold text-premium-amber">🎉 ДЖЕКПОТ! +Allsafe Premium 3 мес.</div>
                 ) : last.winXp > 0 ? (
                   <div className="font-display text-xl text-ok font-bold">+{last.winXp} XP{last.winNeurons ? ` · +${last.winNeurons} 🧠` : ''}</div>
                 ) : (

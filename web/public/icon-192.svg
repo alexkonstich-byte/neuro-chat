@@ -1,1 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#60a5fa"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs><rect width="192" height="192" rx="40" fill="url(#g)"/><path d="M48 64 L96 36 L144 64 L144 128 L96 156 L48 128 Z" fill="none" stroke="#fff" stroke-width="9" stroke-linejoin="round"/><circle cx="96" cy="96" r="14" fill="#fff"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <radialGradient id="core" cx="32%" cy="28%" r="85%">
+      <stop offset="0%"   stop-color="#7AA2FF"/>
+      <stop offset="45%"  stop-color="#C56BFF"/>
+      <stop offset="100%" stop-color="#0E1018"/>
+    </radialGradient>
+    <linearGradient id="stroke" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0"    stop-color="#5B72FF"/>
+      <stop offset="0.55" stop-color="#C56BFF"/>
+      <stop offset="1"    stop-color="#65DEFF"/>
+    </linearGradient>
+    <linearGradient id="tick" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#C9DCFF"/>
+    </linearGradient>
+    <radialGradient id="bg" cx="50%" cy="40%" r="80%">
+      <stop offset="0%"   stop-color="#1B1E2B"/>
+      <stop offset="100%" stop-color="#08090F"/>
+    </radialGradient>
+  </defs>
+  <rect width="192" height="192" rx="40" fill="url(#bg)"/>
+  <g transform="translate(16,16) scale(2.5)">
+    <path d="M32 3 C 22 3, 14 6, 8 10 C 8 30, 10 46, 32 61 C 54 46, 56 30, 56 10 C 50 6, 42 3, 32 3 Z"
+          fill="url(#core)" stroke="url(#stroke)" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M32 10 C 24 10, 18 12, 14 15 C 14 30, 16 42, 32 53 C 48 42, 50 30, 50 15 C 46 12, 40 10, 32 10 Z"
+          fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+    <path d="M19 32 L28 41 L46 22"
+          stroke="url(#tick)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+</svg>

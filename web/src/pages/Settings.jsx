@@ -115,7 +115,7 @@ function IssueCodePanel() {
         <div className="text-2xl">🔐</div>
         <div className="flex-1 min-w-0">
           <div className="font-semibold">Войти на другом устройстве</div>
-          <div className="text-xs text-white/55 mt-0.5">Одноразовый код, действует 5 минут. Также придёт в чат Neuro.</div>
+          <div className="text-xs text-white/55 mt-0.5">Одноразовый код, действует 5 минут. Также придёт в чат Allsafe.</div>
         </div>
       </div>
       {code && remaining > 0 ? (

@@ -158,7 +158,7 @@ export default function Profile() {
             </div>
           )}
           <div className="mt-4 flex items-center gap-2 flex-wrap justify-center">
-            {user.isPremium && <Tag tone="premium">✦ Neuro Premium</Tag>}
+            {user.isPremium && <Tag tone="premium">✦ Allsafe Premium</Tag>}
             {user.isAdmin && <Tag tone="brand">админ</Tag>}
             {user.xp != null && <Tag>XP · {user.xp.toLocaleString()}</Tag>}
             {isMe && me.neurons > 0 && <Tag tone="brand">🧠 {me.neurons}</Tag>}
@@ -304,7 +304,7 @@ function IssueCodePanel() {
         <div className="text-2xl">🔐</div>
         <div className="flex-1 min-w-0">
           <div className="font-semibold">Войти на другом устройстве</div>
-          <div className="text-xs text-white/55 mt-0.5">Одноразовый код, действует 5 минут. Также придёт в чат Neuro.</div>
+          <div className="text-xs text-white/55 mt-0.5">Одноразовый код, действует 5 минут. Также придёт в чат Allsafe.</div>
         </div>
       </div>
       {code && remaining > 0 ? (

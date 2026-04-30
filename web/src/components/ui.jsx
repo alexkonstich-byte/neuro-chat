@@ -1,42 +1,71 @@
 import React, { forwardRef, useEffect, useRef } from 'react';
 
-/* ---------------- Brand mark v2 (organic, with orbital spark) ---------------- */
-export function NeuroMark({ size = 28, glow = false, animated = true }) {
+/* ---------------- Brand mark — Allsafe shield with checkmark ---------------- */
+export function AllsafeMark({ size = 28, glow = false, animated = true }) {
   const px = size + 'px';
-  const id = `nm-${Math.random().toString(36).slice(2, 8)}`;
+  const id = `am-${Math.random().toString(36).slice(2, 8)}`;
   return (
     <svg width={px} height={px} viewBox="0 0 64 64" fill="none" aria-hidden="true"
-         className={glow ? 'drop-shadow-[0_0_22px_rgba(197,107,255,0.6)]' : ''}>
+         className={glow ? 'drop-shadow-[0_0_22px_rgba(91,114,255,0.55)]' : ''}>
       <defs>
-        <radialGradient id={`${id}-core`} cx="35%" cy="32%" r="75%">
-          <stop offset="0%"  stopColor="#7AA2FF" />
-          <stop offset="55%" stopColor="#C56BFF" />
-          <stop offset="100%" stopColor="#1B1E2B" />
+        {/* Inside fill: dark base with a soft brand bloom in the upper-left */}
+        <radialGradient id={`${id}-core`} cx="32%" cy="28%" r="85%">
+          <stop offset="0%"   stopColor="#7AA2FF" />
+          <stop offset="45%"  stopColor="#C56BFF" />
+          <stop offset="100%" stopColor="#0E1018" />
         </radialGradient>
+        {/* Outline: full hero gradient */}
         <linearGradient id={`${id}-stroke`} x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0"   stopColor="#5B72FF" />
-          <stop offset="0.5" stopColor="#C56BFF" />
-          <stop offset="1"   stopColor="#65DEFF" />
+          <stop offset="0"    stopColor="#5B72FF" />
+          <stop offset="0.55" stopColor="#C56BFF" />
+          <stop offset="1"    stopColor="#65DEFF" />
         </linearGradient>
-        <linearGradient id={`${id}-n`} x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0" stopColor="#fff" />
-          <stop offset="1" stopColor="#E5E9FF" />
+        {/* Checkmark: clean white-to-icy gradient */}
+        <linearGradient id={`${id}-tick`} x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0" stopColor="#FFFFFF" />
+          <stop offset="1" stopColor="#C9DCFF" />
         </linearGradient>
       </defs>
-      {/* Core blob — organic squircle */}
-      <path d="M32 4 Q56 4 60 20 Q64 36 52 50 Q40 62 26 60 Q8 56 4 38 Q0 14 32 4 Z"
-            fill={`url(#${id}-core)`} stroke={`url(#${id}-stroke)`} strokeWidth="2" />
-      {/* The N */}
-      <path d="M22 44 V20 H27 L40 38 V20 H45 V44 H40 L27 26 V44 Z"
-            fill={`url(#${id}-n)`} />
-      {/* Orbital spark */}
+
+      {/* Shield silhouette: rounded crest top, soft point at the bottom */}
+      <path
+        d="M32 3
+           C 22 3, 14 6, 8 10
+           C 8 30, 10 46, 32 61
+           C 54 46, 56 30, 56 10
+           C 50 6, 42 3, 32 3 Z"
+        fill={`url(#${id}-core)`}
+        stroke={`url(#${id}-stroke)`} strokeWidth="2.5" strokeLinejoin="round"
+      />
+
+      {/* Inner ring — feels like a faceplate */}
+      <path
+        d="M32 10
+           C 24 10, 18 12, 14 15
+           C 14 30, 16 42, 32 53
+           C 48 42, 50 30, 50 15
+           C 46 12, 40 10, 32 10 Z"
+        fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="1"
+      />
+
+      {/* Bold checkmark — confidence + safety */}
+      <path
+        d="M19 32 L28 41 L46 22"
+        stroke={`url(#${id}-tick)`} strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round"
+        fill="none"
+      />
+
+      {/* Orbital spark — keeps the dynamic vibe of the old mark */}
       <g style={{ transformOrigin: '32px 32px' }} className={animated ? 'animate-[spinSlow_8s_linear_infinite]' : ''}>
-        <circle cx="56" cy="14" r="2.2" fill="#65DEFF" />
-        <circle cx="56" cy="14" r="4" fill="#65DEFF" opacity="0.3" />
+        <circle cx="55" cy="14" r="2.2" fill="#65DEFF" />
+        <circle cx="55" cy="14" r="4"   fill="#65DEFF" opacity="0.3" />
       </g>
     </svg>
   );
 }
+
+/* Back-compat alias so older imports of <NeuroMark/> keep working without touching every file. */
+export const NeuroMark = AllsafeMark;
 
 /* ---------------- Toast viewport (mounted once in App.jsx) ---------------- */
 export function ToastViewport({ toasts, onDismiss }) {

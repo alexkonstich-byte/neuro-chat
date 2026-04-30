@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Chats from './pages/Chats.jsx';
-import { NeuroMark } from './components/ui.jsx';
+import { AllsafeMark } from './components/ui.jsx';
 import Onboarding from './components/Onboarding.jsx';
 import { useAuth } from './store.js';
 
@@ -53,12 +53,12 @@ export function DesktopEmpty() {
       </div>
       <div className="relative">
         <div className="mx-auto mb-6 animate-pop">
-          <NeuroMark size={88} glow />
+          <AllsafeMark size={88} glow />
         </div>
         <h2 className="font-display text-3xl font-bold mb-2 text-hero">Выберите чат</h2>
         <p className="text-white/55 max-w-sm">
           Откройте любой диалог слева или начните новый. Чат «Избранное»
-          и «Neuro» уже на месте.
+          и «Allsafe» уже на месте.
         </p>
       </div>
     </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, auth } from '../api.js';
 import { useAuth } from '../store.js';
-import { NeuroMark, GradientHalo, Button, Field, Input, PasswordInput, Card } from '../components/ui.jsx';
+import { AllsafeMark, GradientHalo, Button, Field, Input, PasswordInput, Card } from '../components/ui.jsx';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -34,7 +34,7 @@ export default function Register() {
       <div className="relative w-full max-w-sm animate-slide-up">
         <div className="text-center mb-9">
           <div className="inline-grid place-items-center mb-4 animate-pop sparkle">
-            <NeuroMark size={56} glow />
+            <AllsafeMark size={56} glow />
           </div>
           <h1 className="font-display text-5xl font-bold text-hero leading-none">Регистрация</h1>
           <div className="text-sm text-white/55 mt-2">30 секунд и ты внутри</div>

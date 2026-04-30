@@ -36,7 +36,7 @@ export function ensureNeuroChat(userId) {
   if (existing) return existing.id;
   const t = now();
   const r = db.prepare(`INSERT INTO chats(type, title, created_by, created_at, last_message_at)
-                        VALUES('service', 'Neuro', ?, ?, ?)`).run(botId, t, t);
+                        VALUES('service', 'Allsafe', ?, ?, ?)`).run(botId, t, t);
   const chatId = Number(r.lastInsertRowid);
   db.prepare(`INSERT INTO chat_members(chat_id, user_id, role, joined_at) VALUES(?, ?, 'member', ?)`).run(chatId, userId, t);
   db.prepare(`INSERT INTO chat_members(chat_id, user_id, role, joined_at) VALUES(?, ?, 'owner', ?)`).run(chatId, botId, t);

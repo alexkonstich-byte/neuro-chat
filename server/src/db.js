@@ -324,13 +324,19 @@ CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status, created_at DE
 CREATE INDEX IF NOT EXISTS idx_feedback_user   ON feedback(user_id, created_at DESC);
 `);
 
-// Seed system "Neuro" bot user. Used to send login alerts, jackpot announcements, etc.
-const neuroExists = db.prepare("SELECT id FROM users WHERE username = 'neuro'").get();
-if (!neuroExists) {
+// Seed system "Allsafe" bot user (kept on username='neuro' for back-compat with
+// existing installs and chat lookups; only the displayed name is rebranded).
+const allsafeBotExists = db.prepare("SELECT id, display_name FROM users WHERE username = 'neuro'").get();
+if (!allsafeBotExists) {
   db.prepare(
     `INSERT INTO users(username, display_name, bio, is_admin, created_at, last_seen_at)
-     VALUES('neuro', 'Neuro', 'Системные уведомления и коды входа', 0, ?, ?)`
+     VALUES('neuro', 'Allsafe', 'Системные уведомления и коды входа', 0, ?, ?)`
   ).run(Date.now(), Date.now());
+} else if (allsafeBotExists.display_name === 'Neuro') {
+  // Migration: rename the bot's display_name on existing installs.
+  db.prepare("UPDATE users SET display_name = 'Allsafe', bio = 'Системные уведомления и коды входа' WHERE username = 'neuro'").run();
+  // Also rename existing service-chat titles that still say 'Neuro'.
+  db.prepare("UPDATE chats SET title = 'Allsafe' WHERE type = 'service' AND title = 'Neuro'").run();
 }
 
 // Default settings — admin can change via panel.

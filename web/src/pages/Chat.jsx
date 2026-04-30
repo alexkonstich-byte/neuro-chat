@@ -231,13 +231,13 @@ export default function Chat() {
   const headerAvatar = isSelf
     ? <div className="w-10 h-10 rounded-full bg-hero-gradient grid place-items-center text-xl shadow-glow-brand">🔖</div>
     : isService
-      ? <div className="w-10 h-10 rounded-full bg-premium-gradient grid place-items-center font-display text-base font-black shadow-glow-premium">N</div>
+      ? <div className="w-10 h-10 rounded-full bg-premium-gradient grid place-items-center font-display text-base font-black shadow-glow-premium">A</div>
       : isGroup
         ? <div className="w-10 h-10 rounded-full bg-ink-700 grid place-items-center text-lg">👥</div>
         : <Avatar user={peer || { displayName: chatMeta?.chat?.title }} size={40} />;
 
   const headerTitle = isSelf ? 'Избранное'
-    : isService ? 'Neuro'
+    : isService ? 'Allsafe'
     : isGroup ? (chatMeta?.chat?.title || 'Группа')
     : peer?.displayName || chatMeta?.chat?.title || '';
 
@@ -701,7 +701,7 @@ function NeuroIntroCard() {
   const titles = { bug: 'Сообщить о баге', feature: 'Предложить фичу', message: 'Написать админу' };
   const msgBubble = (content) => (
     <div className="flex gap-2 justify-start my-1.5">
-      <div className="w-8 h-8 rounded-full bg-premium-gradient grid place-items-center font-display text-sm font-black shadow-glow-premium shrink-0">N</div>
+      <div className="w-8 h-8 rounded-full bg-premium-gradient grid place-items-center font-display text-sm font-black shadow-glow-premium shrink-0">A</div>
       <div className="max-w-[80%] bg-ink-700 text-white rounded-2xl rounded-bl-md px-3 py-2 text-sm">
         {content}
       </div>
@@ -711,7 +711,7 @@ function NeuroIntroCard() {
     <div className="px-1 py-2">
       {msgBubble(
         <div>
-          <p className="font-semibold mb-1">Привет 👋 Это чат Neuro.</p>
+          <p className="font-semibold mb-1">Привет 👋 Это чат Allsafe.</p>
           <p className="text-white/70 text-xs mb-2.5">Здесь приходят коды входа и системные оповещения. Если нашёл баг или хочешь что-то предложить — нажми ниже:</p>
           <div className="grid grid-cols-3 gap-1.5">
             <button onClick={() => setOpen('bug')}     className="press bg-white/10 hover:bg-white/20 rounded-xl py-2 text-xs font-semibold transition">🐞 Баг</button>

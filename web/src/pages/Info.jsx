@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { NeuroMark, GradientHalo, Button, Tag, Card } from '../components/ui.jsx';
+import { AllsafeMark, GradientHalo, Button, Tag, Card } from '../components/ui.jsx';
 
 const FEATURES = [
   { icon: '💬', title: 'Real-time чаты',         desc: 'Реакции, ответы, редактирование, удаление, печатает, presence, прочитано.' },
   { icon: '📞', title: 'Аудио и видеозвонки',    desc: 'P2P через WebRTC. Личные и групповые (mesh) — прямо из браузера.' },
   { icon: '🎙', title: 'Голос и кружки',         desc: 'Push-to-hold: жми и держи. Кружки — закруглённые квадраты с превью себя.' },
   { icon: '🛒', title: 'Магазин за XP',          desc: 'Анимированные фоны, обводки, префиксы, множители опыта, нейроны.' },
-  { icon: '🎰', title: 'Казино со слотами',      desc: 'Лидерборд, джекпот 7-7-7 = Neuro Premium на 3 месяца.' },
+  { icon: '🎰', title: 'Казино со слотами',      desc: 'Лидерборд, джекпот 7-7-7 = Allsafe Premium на 3 месяца.' },
   { icon: '🔥', title: 'Огоньки дружбы',         desc: 'Общайся каждый день — счётчик растёт, прервёшь — обнулится.' },
-  { icon: '✦', title: 'Neuro Premium',          desc: 'Цвет ника, цвет префикса, кастомный эмодзи, эксклюзивные косметики.' },
+  { icon: '✦', title: 'Allsafe Premium',        desc: 'Цвет ника, цвет префикса, кастомный эмодзи, эксклюзивные косметики.' },
   { icon: '👑', title: 'VIP',                    desc: 'Анимированные фоны и обводки бесплатно, видео-аватарка, значок 👑.' },
   { icon: '🛡', title: 'Антиспам и админка',     desc: 'Глобальные/персональные банвордс, shadow-баны, инбокс заявок.' },
   { icon: '📲', title: 'PWA',                    desc: 'Устанавливается как приложение на телефон или ПК. Native — скоро.' },
@@ -23,6 +23,20 @@ const STACK = [
 ];
 
 const CHANGELOG = [
+  {
+    version: 'v0.6',
+    date: '2026-05-01',
+    title: 'Ребрендинг: Neuro → Allsafe',
+    items: [
+      'Новое имя — Allsafe. Подчёркивает приватность и безопасность переписки',
+      'Новый логотип-щит с галочкой и орбитальной искрой',
+      'Бренд везде обновлён: вход, регистрация, /info, чат-бот, профиль, magnet, PWA-иконки',
+      'Чат «Neuro» автоматически переименован в «Allsafe» (миграция при старте сервера)',
+      'Premium теперь называется «Allsafe Premium»',
+      'Манифест PWA, тайтл вкладки и favicon обновлены',
+      'Внутренние идентификаторы (DB-username бота, токен localStorage, имя PM2-процесса) сохранены — никого не разлогинит',
+    ],
+  },
   {
     version: 'v0.5',
     date: '2026-05-01',
@@ -58,7 +72,7 @@ const CHANGELOG = [
       'Поля в профиле: дата рождения, телефон, статус (эмодзи + текст)',
       'Кнопка показать пароль · код-вход выровнен слева',
       'Раздел «Настройки» отделён от профиля — темы, сессии, безопасность',
-      'Сообщения в чате Neuro теперь нормальные, плюс кнопки «Баг» / «Идея» / «Админу»',
+      'Сообщения в чате Allsafe теперь нормальные, плюс кнопки «Баг» / «Идея» / «Админу»',
       'VIP-флаг в админке + новые анимированные обводки в магазине',
       'Десктоп: список чатов больше не скроллится при работе с магазином',
     ],
@@ -91,7 +105,7 @@ const CHANGELOG = [
     title: 'Первый запуск',
     items: [
       'Username/password + код-вход с другого устройства',
-      'Чаты «Избранное» и «Neuro» создаются автоматически',
+      'Чаты «Избранное» и «Allsafe» создаются автоматически',
       'XP за сообщение, антифлуд, множители',
       'Магазин, инвентарь, возврат за 5 минут',
       'Казино со слотами и лидербордом',
@@ -113,16 +127,16 @@ export default function Info() {
 
   return (
     <div className="min-h-full bg-ink-950 text-white">
-      {/* Sticky nav with logo that drifts left of "Neuro" */}
+      {/* Sticky nav with logo that drifts left of "Allsafe" */}
       <div className={`sticky top-0 z-30 transition-all ${scrolled ? 'surface-strong border-b border-white/5' : ''}`}>
         <div className="px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
-          <Link to="/info" className="flex items-center group" aria-label="Neuro home">
+          <Link to="/info" className="flex items-center group" aria-label="Allsafe home">
             <span className={`transition-transform duration-500 ease-out ${scrolled ? '-translate-x-1' : 'translate-x-0'}`}>
-              <NeuroMark size={30} />
+              <AllsafeMark size={30} />
             </span>
             <span className={`ml-2 font-display font-bold text-xl tracking-tight transition-all duration-500
               ${scrolled ? 'opacity-100 translate-x-0' : 'opacity-100 translate-x-0'}`}>
-              Neuro
+              Allsafe
             </span>
           </Link>
           <div className="flex items-center gap-2">
@@ -141,21 +155,21 @@ export default function Info() {
             open beta · web
           </Tag>
 
-          {/* Big logo to the LEFT of "Neuro" — sits inline on desktop */}
+          {/* Big logo to the LEFT of "Allsafe" — sits inline on desktop */}
           <div className="flex items-center justify-center gap-4 mb-3">
             <div className="hidden sm:block animate-pop sparkle">
-              <NeuroMark size={88} glow />
+              <AllsafeMark size={88} glow />
             </div>
             <h1 className="font-display font-extrabold text-balance text-7xl sm:text-8xl leading-[0.92] tracking-[-0.04em] text-hero">
-              Neuro
+              Allsafe
             </h1>
           </div>
           <h2 className="font-display text-4xl sm:text-6xl font-bold tracking-tight text-hero leading-tight mb-5">
-            Мессенджер<br/>с экономикой XP
+            Безопасный мессенджер<br/>с экономикой XP
           </h2>
           <p className="text-lg sm:text-xl text-white/65 max-w-xl mx-auto text-pretty">
             Скорость Телеграма, плюс магазин кастомизации, казино со слотами
-            и кастомный Neuro Premium — за свои собственные баллы.
+            и кастомный Allsafe Premium — за свои собственные баллы.
           </p>
           <div className="mt-9 flex items-center justify-center gap-3 flex-wrap">
             <Button size="lg" asChild><Link to="/register">Начать →</Link></Button>
@@ -163,7 +177,7 @@ export default function Info() {
               <a href="https://github.com/alexkonstich-byte/neuro-chat" target="_blank" rel="noreferrer">⭐ Open Source</a>
             </Button>
           </div>
-          <div className="mt-3 text-xs text-white/45">Native iOS / Android — скоро. Уведомление придёт в чат Neuro.</div>
+          <div className="mt-3 text-xs text-white/45">Native iOS / Android — скоро. Уведомление придёт в чат Allsafe.</div>
         </div>
       </section>
 
@@ -258,8 +272,8 @@ export default function Info() {
               <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-white/45">создатель</div>
               <div className="font-display font-bold text-3xl mt-1">Alex Serguntsov</div>
               <p className="mt-2 text-white/65">
-                Делаю Neuro как личный мессенджер: open-source, свой сервер, свои правила.
-                Если нашёл баг или хочешь предложить фичу — пиши прямо в чат «Neuro» внутри приложения.
+                Делаю Allsafe как личный мессенджер: open-source, свой сервер, свои правила.
+                Если нашёл баг или хочешь предложить фичу — пиши прямо в чат «Allsafe» внутри приложения.
               </p>
               <div className="mt-4 flex items-center justify-center sm:justify-start gap-2">
                 <Button asChild size="sm"><Link to="/login">Войти</Link></Button>
@@ -273,7 +287,7 @@ export default function Info() {
       </section>
 
       <footer className="px-6 py-10 text-center text-xs text-white/40 border-t border-white/5">
-        <div className="font-mono">© {new Date().getFullYear()} Neuro · neurochat.space</div>
+        <div className="font-mono">© {new Date().getFullYear()} Allsafe · neurochat.space</div>
         <div className="mt-1">Made with ❤️ on a home Ubuntu server.</div>
       </footer>
     </div>

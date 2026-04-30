@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth, useChats } from '../store.js';
 import { Avatar, NameLine } from '../components/UserChip.jsx';
-import { NeuroMark, IconButton, Tag, EmptyState, Sheet, Button, Input, Card, Field, PullToRefresh } from '../components/ui.jsx';
+import { IconButton, Tag, EmptyState, Sheet, Button, Input, Card, Field, PullToRefresh } from '../components/ui.jsx';
 
 function formatTs(ts) {
   if (!ts) return '';
@@ -164,7 +164,7 @@ export default function Chats() {
                     {isSelf
                       ? <span className="font-display font-semibold">Избранное</span>
                       : isService
-                        ? <span className="font-display font-semibold">Neuro</span>
+                        ? <span className="font-display font-semibold">Allsafe</span>
                         : c.peer
                           ? <span className="truncate"><NameLine user={c.peer} /></span>
                           : <span className="font-display font-semibold truncate">{c.title}</span>}

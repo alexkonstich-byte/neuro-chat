@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Neuro',
-        short_name: 'Neuro',
-        description: 'Neuro Messenger',
+        name: 'Allsafe',
+        short_name: 'Allsafe',
+        description: 'Allsafe — безопасный мессенджер с экономикой XP',
         theme_color: '#0b1220',
         background_color: '#0b1220',
         display: 'standalone',
